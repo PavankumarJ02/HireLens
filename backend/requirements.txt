@@ -4,5 +4,5 @@ sqlalchemy
 psycopg2-binary
 pdfplumber
 python-dotenv
-anthropic
+google-genai
 pydantic
