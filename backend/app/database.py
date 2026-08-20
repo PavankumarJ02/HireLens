@@ -1,6 +1,6 @@
 """
 Database connection and session management module.
-Initializes SQLAlchemy engine and sessionmaker.
+Initializes SQLAlchemy engine and sessionmaker for PostgreSQL.
 """
 
 from sqlalchemy import create_engine
@@ -8,6 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 
+# PostgreSQL-only engine initialization
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -1,64 +1,78 @@
 """
-Pydantic schemas for data validation and serialization.
+Pydantic schemas for data validation and serialization (Day 1).
 """
 
-from typing import List, Optional
-from pydantic import BaseModel
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, ConfigDict, Field
+
+# --- Resume ---
 
 class ResumeBase(BaseModel):
-    """Base schema for Resumes."""
+    """Base schema for Resume details."""
     filename: str
 
 class ResumeCreate(ResumeBase):
-    """Schema for creating a Resume."""
+    """Schema for creating a Resume database record."""
     raw_text: str
-    parsed_skills: Optional[str] = None
-    parsed_experience: Optional[str] = None
-    parsed_education: Optional[str] = None
+    structured_data: Optional[Dict[str, Any]] = None
+    extraction_confidence: Optional[Dict[str, Any]] = None
 
-class ResumeResponse(ResumeBase):
-    """Response schema for a Resume."""
+class ResumeOut(ResumeBase):
+    """Response schema for Resume queries."""
     id: int
-    raw_text: Optional[str]
-    parsed_skills: Optional[str]
-    parsed_experience: Optional[str]
-    parsed_education: Optional[str]
+    raw_text: str
+    structured_data: Optional[Dict[str, Any]] = None
+    extraction_confidence: Optional[Dict[str, Any]] = None
+    uploaded_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-class JobBase(BaseModel):
-    """Base schema for Jobs."""
+# --- Job Description ---
+
+class JobDescriptionBase(BaseModel):
+    """Base schema for Job Description details."""
     title: str
-    description: str
+    raw_text: str
 
-class JobCreate(JobBase):
-    """Schema for creating a Job."""
-    pass
+class JobDescriptionCreate(JobDescriptionBase):
+    """Schema for creating a Job Description record."""
+    parsed_requirements: Optional[Dict[str, Any]] = None
 
-class JobResponse(JobBase):
-    """Response schema for a Job."""
+class JobDescriptionOut(JobDescriptionBase):
+    """Response schema for Job Description query results."""
     id: int
+    parsed_requirements: Optional[Dict[str, Any]] = None
+    created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
+
+# --- Match ---
+
+class ScoreBreakdown(BaseModel):
+    """Nested schema representing granular matching scores."""
+    skills: int = Field(..., ge=1, le=10, description="Granular match score for skills")
+    experience: int = Field(..., ge=1, le=10, description="Granular match score for experience")
+    education: int = Field(..., ge=1, le=10, description="Granular match score for education")
 
 class MatchBase(BaseModel):
     """Base schema for Matches."""
     resume_id: int
     job_id: int
-    score: float
-    justification: str
+    overall_score: int = Field(..., ge=1, le=10)
+    score_breakdown: ScoreBreakdown
+    matching_requirements: List[Any]
+    missing_requirements: List[Any]
 
 class MatchCreate(MatchBase):
-    """Schema for creating a Match."""
+    """Schema for creating a Match record."""
     pass
 
-class MatchResponse(MatchBase):
-    """Response schema for a Match."""
+class MatchOut(MatchBase):
+    """Response schema for Match query results."""
     id: int
+    created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

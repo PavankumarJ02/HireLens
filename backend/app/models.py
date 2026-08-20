@@ -1,52 +1,58 @@
 """
-SQLAlchemy models for the Smart Resume Screener.
-Defines database schemas for resumes, jobs, and matches.
+SQLAlchemy models for HireLens (Day 1).
+Defines database schemas for Resumes, JobDescriptions, and Matches.
 """
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Float
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, DateTime, func
 from sqlalchemy.orm import relationship
 from app.database import Base
 
 class Resume(Base):
     """
-    Represents a candidate's resume uploaded to the system.
+    Represents a candidate's uploaded resume with extracted structured data and metadata.
     """
     __tablename__ = "resumes"
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
-    raw_text = Column(Text, nullable=True)
-    parsed_skills = Column(Text, nullable=True)  # Stored as JSON string or text
-    parsed_experience = Column(Text, nullable=True)
-    parsed_education = Column(Text, nullable=True)
+    raw_text = Column(Text, nullable=False)
+    structured_data = Column(JSON, nullable=True)  # Will contain parsed details later
+    extraction_confidence = Column(JSON, nullable=True)  # Will contain extraction metrics later
+    uploaded_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
 
     matches = relationship("Match", back_populates="resume", cascade="all, delete-orphan")
 
 
-class Job(Base):
+class JobDescription(Base):
     """
     Represents a Job Description posted for matching candidate resumes.
     """
-    __tablename__ = "jobs"
+    __tablename__ = "job_descriptions"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
+    raw_text = Column(Text, nullable=False)
+    parsed_requirements = Column(JSON, nullable=True)  # Will contain requirements schema later
+    created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
 
     matches = relationship("Match", back_populates="job", cascade="all, delete-orphan")
 
 
 class Match(Base):
     """
-    Represents the matching details and score between a resume and a job description.
+    Represents the matching status and granular scoring details between a resume and job.
     """
     __tablename__ = "matches"
 
     id = Column(Integer, primary_key=True, index=True)
-    resume_id = Column(Integer, ForeignKey("resumes.id"), nullable=False)
-    job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
-    score = Column(Float, nullable=False)  # 1 to 10 scale
-    justification = Column(Text, nullable=False)
+    resume_id = Column(Integer, ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False)
+    job_id = Column(Integer, ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False)
+    overall_score = Column(Integer, nullable=False)
+    score_breakdown = Column(JSON, nullable=False)
+    matching_requirements = Column(JSON, nullable=False)
+    missing_requirements = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
 
     resume = relationship("Resume", back_populates="matches")
-    job = relationship("Job", back_populates="matches")
+    job = relationship("JobDescription", back_populates="matches")
