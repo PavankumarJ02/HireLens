@@ -1,9 +1,9 @@
 """
-Pydantic schemas for data validation and serialization (Day 2 & Day 3).
+Pydantic schemas for data validation and serialization (Day 2, Day 3 & Day 4).
 """
 
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 # --- Candidate Profile Extractions ---
@@ -60,7 +60,7 @@ class JobRequirements(BaseModel):
 # --- Match Evaluation ---
 
 class Evidence(BaseModel):
-    """granular matching evidence text per-dimension."""
+    """Granular matching evidence text per-dimension."""
     skills: Optional[str] = ""
     experience: Optional[str] = ""
     projects: Optional[str] = ""
@@ -82,6 +82,11 @@ class LLMMatchResult(BaseModel):
     matching_requirements: List[str] = Field(default_factory=list)
     missing_requirements: List[str] = Field(default_factory=list)
     evidence: Evidence
+
+class MissingRequirements(BaseModel):
+    """Categorized missing requirements."""
+    required: List[str] = Field(default_factory=list)
+    preferred: List[str] = Field(default_factory=list)
 
 
 # --- API Request / Response Schemas ---
@@ -120,14 +125,14 @@ class MatchOut(BaseModel):
     overall_score: int
     score_breakdown: ScoreBreakdown
     matching_requirements: List[str]
-    missing_requirements: Any  # Changed to Any to support both List[str] and categorized Dict
+    missing_requirements: Union[List[str], MissingRequirements]  # Supports flat list or categorized dict
     justification: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
-# --- Day 3 Batch Screening Schemas ---
+# --- Day 3 Batch Screening & Day 4 Candidate Detail Schemas ---
 
 class BatchScreeningRequest(BaseModel):
     job_id: int
@@ -140,10 +145,34 @@ class BatchScreeningResultCandidate(BaseModel):
     overall_score: int
     score_breakdown: ScoreBreakdown
     matching_requirements: List[str]
-    missing_requirements: Any
+    missing_requirements: Union[List[str], MissingRequirements]
     justification: Optional[str] = None
 
 class BatchScreeningResponse(BaseModel):
     job_id: int
     total_candidates: int
     results: List[BatchScreeningResultCandidate]
+
+
+class CandidateDetailResponse(BaseModel):
+    """Combined profile and match metrics schema for candidate-detail view."""
+    resume_id: int
+    filename: str
+    uploaded_at: datetime
+    
+    # Candidate profile data
+    candidate_name: Optional[str] = ""
+    contact: Optional[Contact] = None
+    skills: List[str] = Field(default_factory=list)
+    experience: List[Experience] = Field(default_factory=list)
+    education: List[Education] = Field(default_factory=list)
+    projects: List[Project] = Field(default_factory=list)
+    certifications: List[str] = Field(default_factory=list)
+    
+    # Matching details (optional, returned if job_id was evaluated)
+    job_id: Optional[int] = None
+    overall_score: Optional[int] = None
+    score_breakdown: Optional[ScoreBreakdown] = None
+    matching_requirements: Optional[List[str]] = None
+    missing_requirements: Optional[Union[List[str], MissingRequirements]] = None
+    justification: Optional[str] = None

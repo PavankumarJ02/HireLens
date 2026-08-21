@@ -1,5 +1,5 @@
 """
-Router for running candidate matching evaluations and returning explainable metrics (Day 2 & Day 3).
+Router for running candidate matching evaluations and retrieving match details (Day 2, Day 3 & Day 4).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -189,3 +189,18 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
     Caches parsed inputs, scores technical metrics, and computes weighted Python scores.
     """
     return evaluate_resume_against_job(request.resume_id, request.job_id, db)
+
+
+@router.get("/{match_id}", response_model=MatchOut, status_code=status.HTTP_200_OK)
+async def get_match(match_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve one specific match result by ID.
+    Raises HTTP 404 if the match record is not found.
+    """
+    match_record = db.query(Match).filter(Match.id == match_id).first()
+    if not match_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Match record with ID {match_id} not found."
+        )
+    return match_record
