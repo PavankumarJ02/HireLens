@@ -154,6 +154,27 @@ flowchart TD
     class PARSER,EXTRACT,MATCH,GEMINI,RANK ai;
     class MODELS,DB data;
 ```
+```mermaid
+graph TD
+    A["📄 Resume Upload + Job Description"] --> B["⚡ FastAPI Endpoint (/matches/run)"]
+    B --> C["📑 PDF Text Extraction (pdfplumber)"]
+    C --> D["1️⃣ Structured Extraction<br/>(Gemini 2.5 Flash-Lite)"]
+    D --> E["2️⃣ Deterministic Matcher<br/>(Rule-based skill/experience overlap)"]
+    E --> F["3️⃣ Evidence-Linked Scoring<br/>(Gemini reasoning + citations)"]
+    F --> G["🛡️ Score Breakdown + Evidence + Confidence"]
+    F --> H["🗄️ PostgreSQL (Match record)"]
+    G --> I["📊 Dashboard (Shortlist View)"]
+
+    style A fill:#0f172a,stroke:#38bdf8,color:#f8fafc
+    style B fill:#1e293b,stroke:#38bdf8,color:#f8fafc
+    style C fill:#1e293b,stroke:#94a3b8,color:#f8fafc
+    style D fill:#1e293b,stroke:#fb923c,color:#f8fafc
+    style E fill:#1e293b,stroke:#34d399,color:#f8fafc
+    style F fill:#1e293b,stroke:#f472b6,color:#f8fafc
+    style G fill:#0f172a,stroke:#c084fc,color:#f8fafc
+    style H fill:#0f172a,stroke:#94a3b8,color:#f8fafc
+    style I fill:#0f172a,stroke:#38bdf8,color:#f8fafc
+```
 
 ---
 
