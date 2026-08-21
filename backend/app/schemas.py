@@ -1,5 +1,5 @@
 """
-Pydantic schemas for data validation and serialization (Day 2).
+Pydantic schemas for data validation and serialization (Day 2 & Day 3).
 """
 
 from datetime import datetime
@@ -120,8 +120,30 @@ class MatchOut(BaseModel):
     overall_score: int
     score_breakdown: ScoreBreakdown
     matching_requirements: List[str]
-    missing_requirements: List[str]
+    missing_requirements: Any  # Changed to Any to support both List[str] and categorized Dict
     justification: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Day 3 Batch Screening Schemas ---
+
+class BatchScreeningRequest(BaseModel):
+    job_id: int
+    resume_ids: List[int]
+
+class BatchScreeningResultCandidate(BaseModel):
+    rank: int
+    resume_id: int
+    candidate_name: str
+    overall_score: int
+    score_breakdown: ScoreBreakdown
+    matching_requirements: List[str]
+    missing_requirements: Any
+    justification: Optional[str] = None
+
+class BatchScreeningResponse(BaseModel):
+    job_id: int
+    total_candidates: int
+    results: List[BatchScreeningResultCandidate]

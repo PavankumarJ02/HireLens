@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app import models  # Force model registration on metadata
-from app.routers import resumes, jobs, matches
+from app.routers import resumes, jobs, matches, screening
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,6 +38,7 @@ app.add_middleware(
 app.include_router(resumes.router)
 app.include_router(jobs.router)
 app.include_router(matches.router)
+app.include_router(screening.router)
 
 @app.get("/")
 async def root():

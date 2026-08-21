@@ -1,5 +1,5 @@
 """
-Router for running candidate matching evaluations and returning explainable metrics (Day 2).
+Router for running candidate matching evaluations and returning explainable metrics (Day 2 & Day 3).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,39 +13,89 @@ from app.services.llm_matcher import score_match, calculate_final_score
 
 router = APIRouter(prefix="/matches", tags=["Matches"])
 
-@router.post("/run", response_model=MatchOut, status_code=status.HTTP_201_CREATED)
-async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
+def classify_missing_skills(missing_reqs: list, parsed_job_reqs: dict) -> dict:
     """
-    Executes explainable resume-to-job matching evaluation.
-    Caches parsed inputs, scores technical metrics, and computes weighted Python scores.
+    Classifies a flat list of missing requirements into required and preferred buckets
+    based on job requirements.
+    """
+    if not parsed_job_reqs:
+        return {"required": missing_reqs, "preferred": []}
+
+    required_skills = {s.lower().strip() for s in parsed_job_reqs.get("required_skills", [])}
+    preferred_skills = {s.lower().strip() for s in parsed_job_reqs.get("preferred_skills", [])}
+
+    classified = {
+        "required": [],
+        "preferred": []
+    }
+
+    for req in missing_reqs:
+        req_clean = req.lower().strip()
+        
+        # Check if it overlaps with preferred skills
+        is_preferred = False
+        for pref in preferred_skills:
+            if pref in req_clean or req_clean in pref:
+                is_preferred = True
+                break
+        
+        if is_preferred:
+            classified["preferred"].append(req)
+        else:
+            classified["required"].append(req)
+
+    return classified
+
+def evaluate_resume_against_job(resume_id: int, job_id: int, db: Session) -> Match:
+    """
+    Shared service function to validate files, cache AI parsing, run matching logic,
+    calculate final score in Python, and persist/reuse matching record.
     """
     # 1. Retrieve & Validate Resume
-    resume = db.query(Resume).filter(Resume.id == request.resume_id).first()
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
     if not resume:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Resume with ID {request.resume_id} not found."
+            detail=f"Resume with ID {resume_id} not found."
         )
     if not resume.raw_text or not resume.raw_text.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Resume raw text content is empty."
+            detail=f"Resume raw text content for ID {resume_id} is empty."
         )
 
     # 2. Retrieve & Validate Job Description
-    job = db.query(JobDescription).filter(JobDescription.id == request.job_id).first()
+    job = db.query(JobDescription).filter(JobDescription.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job description with ID {request.job_id} not found."
+            detail=f"Job description with ID {job_id} not found."
         )
     if not job.raw_text or not job.raw_text.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Job description text is empty."
+            detail=f"Job description text for ID {job_id} is empty."
         )
 
-    # 3. AI Extraction of Resume details (with cache check)
+    # 3. Check if a match record already exists for this pair to avoid duplicate evaluations
+    existing_match = db.query(Match).filter(
+        Match.resume_id == resume_id,
+        Match.job_id == job_id
+    ).first()
+
+    if existing_match:
+        # Check if missing requirements are already classified. If not, classify on the fly
+        if isinstance(existing_match.missing_requirements, list):
+            existing_match.missing_requirements = classify_missing_skills(
+                existing_match.missing_requirements, 
+                job.parsed_requirements
+            )
+            db.add(existing_match)
+            db.commit()
+            db.refresh(existing_match)
+        return existing_match
+
+    # 4. AI Extraction of Resume details (with cache check)
     if not resume.structured_data:
         try:
             structured_resume = extract_structured_data(resume.raw_text)
@@ -62,7 +112,7 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
     else:
         structured_resume = resume.structured_data
 
-    # 4. AI Extraction of Job Description details (with cache check)
+    # 5. AI Extraction of Job Description details (with cache check)
     if not job.parsed_requirements:
         try:
             parsed_job = parse_job_requirements(job.raw_text)
@@ -79,7 +129,7 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
     else:
         parsed_job = job.parsed_requirements
 
-    # 5. Matching & Score Evaluation
+    # 6. Matching & Score Evaluation
     try:
         match_result = score_match(structured_resume, parsed_job)
     except Exception as e:
@@ -88,7 +138,7 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
             detail=f"AI matching evaluation failed: {str(e)}"
         )
 
-    # 6. Python Scoring Calculation
+    # 7. Python Scoring Calculation
     breakdown_scores = {
         "skills": match_result["skills_score"],
         "experience": match_result["experience_score"],
@@ -97,7 +147,7 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
     }
     final_score = calculate_final_score(breakdown_scores)
 
-    # 7. Evidential summary compilation (justification text)
+    # 8. Evidential summary compilation (justification text)
     justification_evidence = (
         f"Skills evaluation (Score: {breakdown_scores['skills']}): {match_result['evidence']['skills']}\n\n"
         f"Experience evaluation (Score: {breakdown_scores['experience']}): {match_result['evidence']['experience']}\n\n"
@@ -105,30 +155,20 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
         f"Education evaluation (Score: {breakdown_scores['education']}): {match_result['evidence']['education']}"
     )
 
-    # 8. Check if a match record already exists for this pair to avoid duplicate match entries
-    existing_match = db.query(Match).filter(
-        Match.resume_id == request.resume_id,
-        Match.job_id == request.job_id
-    ).first()
+    # 9. Classify missing requirements
+    classified_missing = classify_missing_skills(match_result["missing_requirements"], parsed_job)
 
-    if existing_match:
-        existing_match.overall_score = final_score
-        existing_match.score_breakdown = breakdown_scores
-        existing_match.matching_requirements = match_result["matching_requirements"]
-        existing_match.missing_requirements = match_result["missing_requirements"]
-        existing_match.justification = justification_evidence
-        db_match = existing_match
-    else:
-        db_match = Match(
-            resume_id=request.resume_id,
-            job_id=request.job_id,
-            overall_score=final_score,
-            score_breakdown=breakdown_scores,
-            matching_requirements=match_result["matching_requirements"],
-            missing_requirements=match_result["missing_requirements"],
-            justification=justification_evidence
-        )
-        db.add(db_match)
+    # 10. Save new match record
+    db_match = Match(
+        resume_id=resume_id,
+        job_id=job_id,
+        overall_score=final_score,
+        score_breakdown=breakdown_scores,
+        matching_requirements=match_result["matching_requirements"],
+        missing_requirements=classified_missing,
+        justification=justification_evidence
+    )
+    db.add(db_match)
 
     try:
         db.commit()
@@ -141,3 +181,11 @@ async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
         )
 
     return db_match
+
+@router.post("/run", response_model=MatchOut, status_code=status.HTTP_201_CREATED)
+async def run_match(request: MatchRunRequest, db: Session = Depends(get_db)):
+    """
+    Executes explainable resume-to-job matching evaluation.
+    Caches parsed inputs, scores technical metrics, and computes weighted Python scores.
+    """
+    return evaluate_resume_against_job(request.resume_id, request.job_id, db)

@@ -27,43 +27,52 @@ The final match score is computed inside Python using strict weights. This preve
 
 ---
 
-### 📝 LLM Prompts Used
+## 📅 Day 3 — Batch Screening & Candidate Ranking
 
-#### 1. Resume Structured Extraction Prompt (`llm_extractor.py`)
-```
-You are an expert resume parsing system. Analyze the raw resume text provided below and extract candidate profile details.
-CRITICAL RULES:
-1. Extract ONLY facts explicitly stated in the text. Do NOT make up, assume, or hallucinate details.
-2. If contact info, specific skills, experiences, projects, or certifications are not explicitly mentioned, leave them blank, empty strings, or empty lists as appropriate.
-3. Do not evaluate the candidate. Focus purely on accurate extraction and normalization.
-4. For candidate name, prioritize extraction from the header of the resume.
-```
+Day 3 introduces the capability to screen multiple candidates against one job posting and return a ranked candidate list.
 
-#### 2. Job Description Extraction Prompt (`llm_job_parser.py`)
-```
-You are an expert job description parsing agent. Analyze the job description provided below and extract key structured requirements.
-CRITICAL RULES:
-1. Separate required_skills (must-haves) from preferred_skills (optional/nice-to-haves) strictly based on phrasing in the description. Do NOT hallucinate dependencies.
-2. Do not invent requirements that are not mentioned.
-3. Preserve exact technical terminology (e.g., framework versions, tool names).
-4. Return structured JSON matching the requested schema.
-```
+### 🚀 Key Enhancements
+- **Batch Evaluation:** A single endpoint `POST /screening/batch` handles processing multiple resumes at once.
+- **Cache Reuse:** Avoids repeat LLM API calls by pulling cached structured profiles and job requirements when available.
+- **Deterministic Ranking:** Sorts candidate matching outputs descending by `overall_score`. In the event of matching scores, tie-breaking defaults to ascending `resume_id`.
+- **Missing Skills Classification:** Automatically separates missing candidate requirements into `required` vs `preferred` skill categories in Python by checking against the job description schema.
 
-#### 3. Match Evaluation Prompt (`llm_matcher.py`)
-```
-You are an expert HR evaluation assistant. Compare the candidate's structured resume against the job requirements and compute factor scores from 0 to 100.
-Evaluation Dimensions:
-1. Skills: Match technical/soft skills. Highlight required vs preferred overlap.
-2. Experience: Relevance and tenure of past experiences.
-3. Projects: Check if project scope and technology stack align with the job responsibilities.
-4. Education: Check degree requirements alignment.
-
-CRITICAL RULES:
-1. Do NOT calculate the final weighted overall score. You must only evaluate the individual dimensions.
-2. CITE concrete evidence from the resume text or experience description for every dimension's score.
-3. Do not assume or invent facts. If the resume is missing any requirement, explicitly list it under missing_requirements.
-4. Return structured JSON conforming to the requested schema.
-```
+### 🔌 Screening Endpoint
+- **Endpoint:** `POST /screening/batch`
+- **Request Body:**
+  ```json
+  {
+    "job_id": 1,
+    "resume_ids": [1, 2, 3]
+  }
+  ```
+- **Response Structure:**
+  ```json
+  {
+    "job_id": 1,
+    "total_candidates": 3,
+    "results": [
+      {
+        "rank": 1,
+        "resume_id": 2,
+        "candidate_name": "Alice Cooper",
+        "overall_score": 85,
+        "score_breakdown": {
+          "skills": 90,
+          "experience": 80,
+          "projects": 85,
+          "education": 80
+        },
+        "matching_requirements": ["FastAPI", "Python"],
+        "missing_requirements": {
+          "required": ["Docker"],
+          "preferred": ["Kubernetes"]
+        },
+        "justification": "Skills evaluation... Experience evaluation..."
+      }
+    ]
+  }
+  ```
 
 ---
 
@@ -81,4 +90,5 @@ CRITICAL RULES:
    ```
 
 ### Running Matches
-Match evaluations are run by calling `POST /matches/run` with `resume_id` and `job_id`.
+- Single Match Evaluation: `POST /matches/run` with `resume_id` and `job_id`.
+- Batch Match Evaluation: `POST /screening/batch` with `job_id` and a list of `resume_ids`.
