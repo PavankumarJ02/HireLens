@@ -23,17 +23,26 @@ Standard AI resume screening tools operate as "black boxes," passing candidate r
 
 ## 🏗️ Architecture & Data Flow
 
-```
-+------------------+       HTTP Requests       +---------------------+
-|  React Frontend  | <=======================> |   FastAPI Backend   |
-|   (Vite + CSS)   |                           +----------+----------+
-+------------------+                                      |
-                                                          | Evaluates
-                                                          v
-+------------------+       DB Transactions     +---------------------+
-|    PostgreSQL    | <=======================> |  Gemini 2.5 Flash   |
-|  (Supabase ORM)  |                           |  & Python Matcher   |
-+------------------+                           +---------------------+
+```mermaid
+graph TD
+    A["📄 Resume Upload + Job Description"] --> B["⚡ FastAPI Endpoints<br/>(/resumes/upload & /jobs/)"]
+    B --> C["📑 PDF Text Extraction (pdfplumber)"]
+    C --> D["1️⃣ Structured Ingestion<br/>(Gemini 2.5 Flash-Lite)"]
+    D --> E["2️⃣ Deterministic Overlap Matcher<br/>(Rule-based skill classification)"]
+    E --> F["3️⃣ Evidence-Linked Scoring<br/>(Gemini reasoning + dimension breakdown)"]
+    F --> G["🛡️ Stored DB Record (matches table)"]
+    F --> H["🗄️ PostgreSQL Cache (structured_data)"]
+    G --> I["📊 Dashboard (Ranked Shortlist View)"]
+
+    style A fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    style B fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    style C fill:#1e293b,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
+    style D fill:#1e293b,stroke:#fb923c,stroke-width:2px,color:#f8fafc
+    style E fill:#1e293b,stroke:#34d399,stroke-width:2px,color:#f8fafc
+    style F fill:#1e293b,stroke:#f472b6,stroke-width:2px,color:#f8fafc
+    style G fill:#0f172a,stroke:#c084fc,stroke-width:2px,color:#f8fafc
+    style H fill:#0f172a,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
+    style I fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
 ```
 
 ### Data Flow Pipeline:
