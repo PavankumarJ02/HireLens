@@ -1,5 +1,5 @@
 """
-SQLAlchemy models for HireLens (Day 1).
+SQLAlchemy models for HireLens (Day 2).
 Defines database schemas for Resumes, JobDescriptions, and Matches.
 """
 
@@ -17,8 +17,8 @@ class Resume(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     raw_text = Column(Text, nullable=False)
-    structured_data = Column(JSON, nullable=True)  # Will contain parsed details later
-    extraction_confidence = Column(JSON, nullable=True)  # Will contain extraction metrics later
+    structured_data = Column(JSON, nullable=True)  # Candidate structured profile JSON
+    extraction_confidence = Column(JSON, nullable=True)  # Confidence per field annotations
     uploaded_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
 
     matches = relationship("Match", back_populates="resume", cascade="all, delete-orphan")
@@ -33,7 +33,7 @@ class JobDescription(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     raw_text = Column(Text, nullable=False)
-    parsed_requirements = Column(JSON, nullable=True)  # Will contain requirements schema later
+    parsed_requirements = Column(JSON, nullable=True)  # Structured requirements JSON
     created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
 
     matches = relationship("Match", back_populates="job", cascade="all, delete-orphan")
@@ -52,6 +52,7 @@ class Match(Base):
     score_breakdown = Column(JSON, nullable=False)
     matching_requirements = Column(JSON, nullable=False)
     missing_requirements = Column(JSON, nullable=False)
+    justification = Column(Text, nullable=True)  # Stores evaluation summary / text justification
     created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
 
     resume = relationship("Resume", back_populates="matches")
