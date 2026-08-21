@@ -2,22 +2,9 @@
 
 > **Explainable, Evidence-Based Resume Screening & Recruiter Decision-Support System**
 
-HireLens is an AI-assisted recruitment screening and decision-support platform designed to help recruiters evaluate candidate resumes against job descriptions with complete traceability. Instead of outputting a single, black-box match score, HireLens acts as a **recruiter copilot**. It extracts structured candidate profiles, performs rule-based skill checks, and uses LLM semantic reasoning to generate granular, evidence-linked alignment scores (citing specific resume snippets alongside job requirements) that HR teams can trace, audit, and trust.
+HireLens is an AI-assisted recruitment screening and decision-support platform designed to help recruiters evaluate candidate resumes against job descriptions with complete traceability. Instead of outputting a single, black-box match score, HireLens acts as a **recruiter decision-support copilot**. It extracts structured candidate profiles, performs rule-based checks, and uses LLM semantic reasoning to generate granular, evidence-linked alignment scores (citing specific resume snippets alongside job requirements) that HR teams can trace, audit, and trust.
 
-**CRITICAL NOTE:** HireLens is designed strictly for **recruiter decision support** and **human-in-the-loop oversight**. It does not automate final hiring or rejection decisions; rather, it provides human decision-makers with the structured evidence required to make defensible, audit-compliant hiring selections.
-
----
-
-## 1. Project Overview
-
-Evaluating large pools of candidate applications against technical job descriptions is time-consuming and prone to human inconsistency. HireLens streamlines this screening workflow while avoiding the opacity of typical AI matching models. 
-
-### How it Works:
-1.  **Ingestion:** Recruiters upload candidate resumes (PDF format) and submit job descriptions.
-2.  **Structured Processing:** The system parses resume files using `pdfplumber` and queries Google Gemini 2.5 Flash-Lite to extract candidate profiles (contact info, skills, education history, projects, and work experience) into a structured schema.
-3.  **Hybrid Screening:** Candidate profiles are cross-checked against parsed job description requirements. A deterministic scoring algorithm calculated inside application logic combines with semantic category assessments.
-4.  **Traceable Justification:** Gemini generates contextual evaluations for every dimension, citing exact snippets from the candidate's history to support the score.
-5.  **Interactive Comparisons:** Recruiters view a ranked shortlist of candidates on a React dashboard, cross-compare missing/matching skills side-by-side, and inspect full evidence breakdowns before making a decision.
+**Stack:** Backend (FastAPI + Gemini 2.5 Flash-Lite + SQLAlchemy + Pydantic), Frontend (React + Vite + Tailwind CSS).
 
 ---
 
@@ -25,17 +12,17 @@ Evaluating large pools of candidate applications against technical job descripti
 
 ### The Problem
 Traditional candidate matching systems often treat AI evaluations as a black box, outputting a simple number like `Candidate Match: 85%` without explaining the underlying reasoning. This introduces:
-*   **Hallucination Vulnerability:** LLMs can misread candidate experience lengths, hallucinate technologies, or assume qualifications not present in the source files.
-*   **Lack of Traceability:** When an applicant asks for feedback or compliance auditors inspect hiring funnels, HR teams have no defensible logs showing *why* a candidate was ranked or rejected.
-*   **Unstable Ranking:** Simple holistic ratings are highly sensitive to prompt fluctuations and model temperature changes, resulting in inconsistent candidate rankings.
+*   **Lack of Traceability:** Recruiters cannot verify *why* a candidate received a particular rating.
+*   **Hallucination Risk:** LLMs can misread candidate experience lengths, hallucinate technologies, or assume qualifications not present in the source files.
+*   **Bias and Inconsistency:** Holistic ratings fluctuate based on prompt phrasing and contextual temperature changes.
 
-### Implement Scope & Solution
-HireLens mitigates these issues through a structured, multi-layered evaluation pipeline:
-*   **Structured Parsing Cache:** Resume and Job Description structures are parsed once, validated against strict Pydantic schemas, and cached in PostgreSQL. This guarantees that evaluations always match the original document contents and reduces Gemini token usage.
-*   **Granular Dimension Scoring:** Matches are split into four clear metrics (Skills, Experience, Projects, Education) rather than a single holistic rating.
-*   **Snippet Citations:** The matching pipeline forces the model to cite exact textual evidence quotes from the candidate’s history for every dimension score.
-*   **Rule-Based Python Score Weights:** Sub-scores are aggregated using strict, deterministic weights calculated in Python.
-*   **Deterministic Secondary Sort:** Tied scores are broken using database-level parameters (`resume_id ASC`) to ensure stable ranking across updates.
+### HireLens Approach
+HireLens separates resume processing, structured extraction, matching, scoring, and recruiter presentation into distinct stages:
+1.  **Multi-format resume parsing with error handling:** Supports parsing raw resume text (PDF format) with robust error checks for corrupted or unreadable documents.
+2.  **Hybrid scoring:** Combines deterministic rule-based checks for objective facts (e.g. skills overlap) with Gemini contextual reasoning for nuanced judgment—avoiding a single black-box LLM call.
+3.  **Evidence-linked sub-scores:** Evaluates candidates across four distinct dimensions (Skills, Experience, Projects, Education) where each sub-score cites concrete evidence quotes directly from the candidate's resume.
+4.  **Explicit missing-requirements listing:** Provides a clear list of missing required and preferred skills to help recruiters understand gaps, rather than just returning a raw score.
+5.  **Confidence flagging capability:** Contains dedicated placeholders and schema structures to flag when extraction is ambiguous (e.g. years of experience inferred, not stated).
 
 ---
 
