@@ -34,8 +34,9 @@ export default function Candidates({ setView, setSelectedResumeId }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.name.toLowerCase().endswith('.pdf')) {
-      setUploadError('Only PDF files are supported.');
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'pdf' && ext !== 'txt') {
+      setUploadError('Only PDF and TXT files are supported.');
       return;
     }
 

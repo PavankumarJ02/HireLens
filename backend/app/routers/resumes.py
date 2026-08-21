@@ -9,23 +9,29 @@ from app.database import get_db
 from app.models import Resume, Match
 from app.schemas import ResumeOut, CandidateDetailResponse
 from app.services.pdf_parser import extract_text_from_pdf, PDFParsingError
+from app.services.resume_security import validate_file, ResumeValidationError
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
 @router.post("/upload", response_model=ResumeOut, status_code=status.HTTP_201_CREATED)
 async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """
-    Upload a resume PDF, extract raw text, and save the record to the database.
+    Upload a resume PDF or TXT, validate, extract raw text, and save to database.
     """
-    if not file.filename.lower().endswith(".pdf"):
+    try:
+        file_bytes = await file.read()
+        file_type = validate_file(file.filename, file_bytes)
+    except ResumeValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are supported."
+            detail=str(e)
         )
 
     try:
-        file_bytes = await file.read()
-        raw_text = extract_text_from_pdf(file_bytes)
+        if file_type == "pdf":
+            raw_text = extract_text_from_pdf(file_bytes)
+        else: # file_type == "txt"
+            raw_text = file_bytes.decode("utf-8").strip()
     except PDFParsingError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

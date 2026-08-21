@@ -98,8 +98,9 @@ def evaluate_resume_against_job(resume_id: int, job_id: int, db: Session) -> Mat
     # 4. AI Extraction of Resume details (with cache check)
     if not resume.structured_data:
         try:
-            structured_resume = extract_structured_data(resume.raw_text)
+            structured_resume, confidence_dict = extract_structured_data(resume.raw_text)
             resume.structured_data = structured_resume
+            resume.extraction_confidence = confidence_dict
             db.add(resume)
             db.commit()
             db.refresh(resume)

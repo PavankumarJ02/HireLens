@@ -41,7 +41,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
     # Combine extracted pages and strip excess spaces
     full_text = "\n".join(extracted_text_list).strip()
     if not full_text:
-        raise PDFParsingError("No readable text could be extracted from the PDF.")
+        raise PDFParsingError("The PDF appears to contain no readable text and may be scanned or image-only.")
 
     # Clean excessive whitespace and empty lines
     # Replace multiple spaces with a single space
