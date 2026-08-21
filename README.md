@@ -1,217 +1,412 @@
-# HireLens — Explainable, Evidence-Based Resume Screening System
+# HireLens
 
-> "Not just a score — a decision you can defend."
+> **Explainable, Evidence-Based Resume Screening & Recruiter Decision-Support System**
 
-HireLens is an intelligent recruitment tool designed to automate candidate screening while maintaining complete explainability. By combining deterministic rule-based verification with Gemini-powered contextual evaluations, HireLens generates structured candidate profiles and computes evidence-linked alignment scores that HR teams can trace, trust, and audit.
+HireLens is an AI-assisted recruitment screening and decision-support platform designed to help recruiters evaluate candidate resumes against job descriptions with complete traceability. Instead of outputting a single, black-box match score, HireLens acts as a **recruiter copilot**. It extracts structured candidate profiles, performs rule-based skill checks, and uses LLM semantic reasoning to generate granular, evidence-linked alignment scores (citing specific resume snippets alongside job requirements) that HR teams can trace, audit, and trust.
 
----
-
-## 💡 Why HireLens is Different
-
-Standard AI resume screening tools operate as "black boxes," passing candidate resumes and job descriptions directly to LLMs to output a single holistic score (e.g., "7/10"). This approach suffers from:
-*   **Lack of Traceability:** Recruiters cannot verify *why* a candidate received a particular rating.
-*   **Hallucination Risk:** LLMs can misinterpret or invent candidate experience, skills, or projects.
-*   **Bias and Inconsistency:** Holistic ratings fluctuate based on prompt phrasing and contextual temperature changes.
-
-### The HireLens Hybrid Approach:
-1.  **Deterministic categories (Objective Facts):** Objective metrics like skill presence, years of experience, and degrees are evaluated deterministically in Python rather than relying on unstructured LLM guesses.
-2.  **Granular Factor Breakdown:** Matches are split into four clear dimensions (Skills: 40%, Experience: 25%, Projects: 20%, Education: 15%).
-3.  **Strict Evidence Linking:** For each evaluated category, the LLM is forced to extract and cite direct quotes from the candidate's resume and map them against specific requirements.
-4.  **Python-Driven Scoring:** Gemini evaluates individual dimension scores (0-100) and supplies evidence. The final score is computed deterministically in Python using weighted logic, ensuring auditing trust.
+**CRITICAL NOTE:** HireLens is designed strictly for **recruiter decision support** and **human-in-the-loop oversight**. It does not automate final hiring or rejection decisions; rather, it provides human decision-makers with the structured evidence required to make defensible, audit-compliant hiring selections.
 
 ---
 
-## 🏗️ Architecture & Data Flow
+## 1. Project Overview
+
+Evaluating large pools of candidate applications against technical job descriptions is time-consuming and prone to human inconsistency. HireLens streamlines this screening workflow while avoiding the opacity of typical AI matching models. 
+
+### How it Works:
+1.  **Ingestion:** Recruiters upload candidate resumes (PDF format) and submit job descriptions.
+2.  **Structured Processing:** The system parses resume files using `pdfplumber` and queries Google Gemini 2.5 Flash-Lite to extract candidate profiles (contact info, skills, education history, projects, and work experience) into a structured schema.
+3.  **Hybrid Screening:** Candidate profiles are cross-checked against parsed job description requirements. A deterministic scoring algorithm calculated inside application logic combines with semantic category assessments.
+4.  **Traceable Justification:** Gemini generates contextual evaluations for every dimension, citing exact snippets from the candidate's history to support the score.
+5.  **Interactive Comparisons:** Recruiters view a ranked shortlist of candidates on a React dashboard, cross-compare missing/matching skills side-by-side, and inspect full evidence breakdowns before making a decision.
+
+---
+
+## 2. Problem Statement & Scope
+
+### The Problem
+Traditional candidate matching systems often treat AI evaluations as a black box, outputting a simple number like `Candidate Match: 85%` without explaining the underlying reasoning. This introduces:
+*   **Hallucination Vulnerability:** LLMs can misread candidate experience lengths, hallucinate technologies, or assume qualifications not present in the source files.
+*   **Lack of Traceability:** When an applicant asks for feedback or compliance auditors inspect hiring funnels, HR teams have no defensible logs showing *why* a candidate was ranked or rejected.
+*   **Unstable Ranking:** Simple holistic ratings are highly sensitive to prompt fluctuations and model temperature changes, resulting in inconsistent candidate rankings.
+
+### Implement Scope & Solution
+HireLens mitigates these issues through a structured, multi-layered evaluation pipeline:
+*   **Structured Parsing Cache:** Resume and Job Description structures are parsed once, validated against strict Pydantic schemas, and cached in PostgreSQL. This guarantees that evaluations always match the original document contents and reduces Gemini token usage.
+*   **Granular Dimension Scoring:** Matches are split into four clear metrics (Skills, Experience, Projects, Education) rather than a single holistic rating.
+*   **Snippet Citations:** The matching pipeline forces the model to cite exact textual evidence quotes from the candidate’s history for every dimension score.
+*   **Rule-Based Python Score Weights:** Sub-scores are aggregated using strict, deterministic weights calculated in Python.
+*   **Deterministic Secondary Sort:** Tied scores are broken using database-level parameters (`resume_id ASC`) to ensure stable ranking across updates.
+
+---
+
+## 3. Architecture Overview
+
+HireLens is organized into a React client layer, FastAPI service routers, Pydantic validation schemas, AI processing pipelines, and a PostgreSQL database layer.
 
 ```mermaid
-graph TD
-    A["📄 Resume Upload + Job Description"] --> B["⚡ FastAPI Endpoints<br/>(/resumes/upload & /jobs/)"]
-    B --> C["📑 PDF Text Extraction (pdfplumber)"]
-    C --> D["1️⃣ Structured Ingestion<br/>(Gemini 2.5 Flash-Lite)"]
-    D --> E["2️⃣ Deterministic Overlap Matcher<br/>(Rule-based skill classification)"]
-    E --> F["3️⃣ Evidence-Linked Scoring<br/>(Gemini reasoning + dimension breakdown)"]
-    F --> G["🛡️ Stored DB Record (matches table)"]
-    F --> H["🗄️ PostgreSQL Cache (structured_data)"]
-    G --> I["📊 Dashboard (Ranked Shortlist View)"]
+flowchart TD
 
-    style A fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
-    style B fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
-    style C fill:#1e293b,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
-    style D fill:#1e293b,stroke:#fb923c,stroke-width:2px,color:#f8fafc
-    style E fill:#1e293b,stroke:#34d399,stroke-width:2px,color:#f8fafc
-    style F fill:#1e293b,stroke:#f472b6,stroke-width:2px,color:#f8fafc
-    style G fill:#0f172a,stroke:#c084fc,stroke-width:2px,color:#f8fafc
-    style H fill:#0f172a,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
-    style I fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    %% =========================
+    %% Browser Client
+    %% =========================
+    subgraph CLIENT["Browser Client - React"]
+        APP["App.jsx"]
+
+        DASH["Dashboard.jsx"]
+        JOBS["Jobs.jsx"]
+        JOBDETAIL["JobDetails.jsx"]
+        CAND["Candidates.jsx"]
+        SCREEN["ScreenCandidates.jsx"]
+        RESULTS["ScreeningResults.jsx"]
+        DETAIL["CandidateDetails.jsx"]
+        COMPARE["CompareCandidates.jsx"]
+
+        API["services/api.js"]
+
+        APP --> DASH
+        APP --> JOBS
+        APP --> JOBDETAIL
+        APP --> CAND
+        APP --> SCREEN
+        APP --> RESULTS
+        APP --> DETAIL
+        APP --> COMPARE
+
+        DASH --> API
+        JOBS --> API
+        JOBDETAIL --> API
+        CAND --> API
+        SCREEN --> API
+        RESULTS --> API
+        DETAIL --> API
+        COMPARE --> API
+    end
+
+    %% =========================
+    %% FastAPI
+    %% =========================
+    subgraph BACKEND["FastAPI Backend"]
+        MAIN["app/main.py"]
+
+        JOBROUTER["routers/jobs.py"]
+        RESUMEROUTER["routers/resumes.py"]
+        MATCHROUTER["routers/matches.py"]
+        SCREENROUTER["routers/screening.py"]
+
+        MAIN --> JOBROUTER
+        MAIN --> RESUMEROUTER
+        MAIN --> MATCHROUTER
+        MAIN --> SCREENROUTER
+    end
+
+    %% =========================
+    %% Validation
+    %% =========================
+    subgraph VALIDATION["Validation & Schemas"]
+        SCHEMA["schemas.py"]
+        VALIDATE["Request / Response Validation"]
+    end
+
+    %% =========================
+    %% AI Processing
+    %% =========================
+    subgraph AI["Resume Extraction & AI Matching"]
+        PARSER["Resume Parsing"]
+        EXTRACT["Structured Resume Extraction"]
+        MATCH["Match Evaluation"]
+        GEMINI["Gemini 2.5 Flash-Lite"]
+        RANK["Deterministic Candidate Ranking"]
+    end
+
+    %% =========================
+    %% Persistence
+    %% =========================
+    subgraph DATA["Persistence Layer"]
+        MODELS["SQLAlchemy Models"]
+        DB["PostgreSQL"]
+    end
+
+    %% Connections
+    API --> MAIN
+
+    JOBROUTER --> SCHEMA
+    RESUMEROUTER --> SCHEMA
+    MATCHROUTER --> SCHEMA
+    SCREENROUTER --> SCHEMA
+
+    RESUMEROUTER --> PARSER
+    PARSER --> EXTRACT
+
+    MATCHROUTER --> MATCH
+    SCREENROUTER --> MATCH
+
+    MATCH --> GEMINI
+    MATCH --> RANK
+    SCREENROUTER --> RANK
+
+    JOBROUTER --> MODELS
+    RESUMEROUTER --> MODELS
+    MATCHROUTER --> MODELS
+    SCREENROUTER --> MODELS
+
+    EXTRACT --> MODELS
+    MODELS --> DB
+
+    %% =========================
+    %% Styling
+    %% =========================
+    classDef client fill:#111827,stroke:#6366f1,color:#ffffff;
+    classDef backend fill:#172554,stroke:#3b82f6,color:#ffffff;
+    classDef validation fill:#312e81,stroke:#8b5cf6,color:#ffffff;
+    classDef ai fill:#422006,stroke:#f59e0b,color:#ffffff;
+    classDef data fill:#064e3b,stroke:#10b981,color:#ffffff;
+
+    class APP,DASH,JOBS,JOBDETAIL,CAND,SCREEN,RESULTS,DETAIL,COMPARE,API client;
+    class MAIN,JOBROUTER,RESUMEROUTER,MATCHROUTER,SCREENROUTER backend;
+    class SCHEMA,VALIDATE validation;
+    class PARSER,EXTRACT,MATCH,GEMINI,RANK ai;
+    class MODELS,DB data;
 ```
-
-### Data Flow Pipeline:
-1.  **Resume Upload:** Recruiter uploads a PDF resume. The backend extracts plain text using `pdfplumber`.
-2.  **Structured Ingestion:** Gemini 2.5 Flash-Lite converts raw resume text into structured JSON (skills, experience list, education list, project details). Results are saved in the `structured_data` column on the `Resume` database table.
-3.  **Requirement Extraction:** The raw Job Description (JD) text is parsed by Gemini to extract structured requirements (required skills, preferred skills, minimum experience, education) and cached in `JobDescription.parsed_requirements`.
-4.  **Evidence Scoring:** The structured candidate profile and job requirements are matched by Gemini to yield sub-scores and textual evidence quotes.
-5.  **Weighted Calculations:** Python reads sub-scores, calculates the rounded overall score, and classifies missing skills into `required` vs `preferred` buckets.
-6.  **Dashboard Display:** The final record is persisted in the `matches` table and loaded on the recruiter dashboard.
 
 ---
 
-## 🛠️ Tech Stack
+## 4. Technology Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend** | React (Vite) | Clean, fast SPA recruiter dashboard |
-| **Styling** | Tailwind CSS v4 | SaaS responsive user interface layout |
-| **Backend** | FastAPI (Python) | Production-grade REST API service |
-| **Database** | PostgreSQL (SQLAlchemy ORM) | Relational candidate profiles and matches storage |
-| **LLM** | Google Gemini 2.5 Flash-Lite | Contextual extraction, requirement matching, and evidence generation |
-| **PDF Parsing** | pdfplumber | Raw text extraction from resume PDF files |
+| **Frontend Framework** | React (Vite) | Single-page application rendering recruiter screens |
+| **Styling** | Tailwind CSS v4 | SaaS layout stylesheets, progress bars, and badges |
+| **Backend Framework** | FastAPI (Python 3.11+) | Asynchronous routing, middleware processing, and validation |
+| **Database** | PostgreSQL | Relational storage for resumes, jobs, and evaluations |
+| **ORM** | SQLAlchemy | Object-relational mapper for database transactions |
+| **Object Validation** | Pydantic v2 | Model validation for API inputs, outputs, and JSON payloads |
+| **LLM Engine** | Gemini 2.5 Flash-Lite | Contextual structured extraction and matches generation |
+| **SDK** | `google-genai` | Native Google API integration for Structured Output schemas |
+| **PDF Parsing** | pdfplumber | Raw text extraction from resume PDF documents |
 
 ---
 
-## 📂 Project Structure
+## 5. Database Schema & Data Models
+
+HireLens structures relational entities in PostgreSQL. Custom JSON columns hold structured resumes and jobs requirement objects, enabling caching.
 
 ```
-hirelens/
-├── backend/
-│   ├── app/
-│   │   ├── main.py               # FastAPI application setup and router registrations
-│   │   ├── models.py             # SQLAlchemy models (Resume, JobDescription, Match)
-│   │   ├── database.py           # PostgreSQL DB connections and session dependencies
-│   │   ├── schemas.py            # Pydantic validation schemas (Job list, Resume detail, MatchOut)
-│   │   ├── routers/
-│   │   │   ├── resumes.py        # Endpoints for resume uploads and profile queries
-│   │   │   ├── jobs.py           # Endpoints for creating and querying jobs
-│   │   │   ├── matches.py        # Single candidate match run and match detail route handlers
-│   │   │   └── screening.py      # Batch candidate evaluations and ranking endpoint handlers
-│   │   ├── services/
-│   │   │   ├── pdf_parser.py     # PDF parsing and whitespace cleaning using pdfplumber
-│   │   │   ├── llm_extractor.py  # Gemini service for candidate structured JSON profile extraction
-│   │   │   ├── llm_job_parser.py # Gemini service for Job Description structured requirement extraction
-│   │   │   └── llm_matcher.py    # Gemini service for dimension matches and Python weighted scorer
-│   │   └── config.py             # Configuration loader for database URIs and Gemini API keys
-│   ├── requirements.txt          # Python packages list (fastapi, google-genai, sqlalchemy, etc.)
-│   ├── .env.example              # Placeholder templates for API credentials
-│   └── .gitignore                # Gitignore rules for Python caches and env files
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Sidebar.jsx       # Layout navigation component
-│   │   │   ├── Loader.jsx        # Spinner and loading progress alerts
-│   │   │   └── ErrorAlert.jsx    # User-friendly warning banners for network issues
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx     # Overview page for job metrics and vacancies
-│   │   │   ├── Jobs.jsx          # Vacancy listing and inline creations form
-│   │   │   ├── JobDetails.jsx    # Display full job text and structured job requirements
-│   │   │   ├── Candidates.jsx    # Candidate database listing and PDF upload forms
-│   │   │   ├── ScreenCandidates.jsx # Multi-select candidate screening initiator
-│   │   │   ├── ScreeningResults.jsx # Ranked candidate tables, score breakdowns, and comparisons
-│   │   │   ├── CandidateDetails.jsx # Detailed profile view joined with evaluation evidence
-│   │   │   └── CompareCandidates.jsx# Candidate side-by-side comparison tables
-│   │   ├── services/
-│   │   │   └── api.js            # Unified API caller mapping to FastAPI ports
-│   │   ├── App.jsx               # Main state router and application framework
-│   │   └── index.css             # Tailwind CSS entry directive
-│   ├── vite.config.js            # Vite configurations with tailwindcss compiler plugins
-│   └── package.json              # Frontend package configurations and scripts
-└── README.md                     # Technical project documentation
+                          +-------------------+
+                          |      resumes      |
+                          +-------------------+
+                          | id: int           | <---+
+                          | filename: str     |     |
+                          | raw_text: text    |     |
+                          | structured_data:  |     |
+                          |   JSON            |     |
+                          | uploaded_at: date |     |
+                          +-------------------+     |
+                                                    |
++-------------------+                               |
+|  job_descriptions |                               |
++-------------------+                               |
+| id: int           | <---+                         |
+| title: str        |     |                         |
+| raw_text: text    |     |                         |
+| parsed_require-   |     |                         |
+|   ments: JSON     |     |                         |
+| created_at: date  |     |                         |
++-------------------+     |                         |
+                          |                         |
+                          |   +-----------------+   |
+                          |   |     matches     |   |
+                          |   +-----------------+   |
+                          |   | id: int         |   |
+                          +---| job_id: int     |   |
+                              | resume_id: int  |---+
+                              | overall_score:  |
+                              |   int           |
+                              | score_break-    |
+                              |   down: JSON    |
+                              | matching_reqs:  |
+                              |   JSON          |
+                              | missing_reqs:   |
+                              |   JSON          |
+                              | justification:  |
+                              |   text          |
+                              | created_at: date|
+                              +-----------------+
+```
+
+### Table Properties:
+
+#### 1. Resumes (`resumes`)
+*   `id` (Integer, Primary Key): Unique candidate sequence identifier.
+*   `filename` (String, Non-Nullable): Original uploaded file name.
+*   `raw_text` (Text, Non-Nullable): Text parsed from PDF via pdfplumber.
+*   `structured_data` (JSON, Nullable): Candidate structured profile mapping to `StructuredResume`.
+*   `extraction_confidence` (JSON, Nullable): Per-field confidence notes parsed by Gemini.
+*   `uploaded_at` (DateTime, Default: UTC Now): Ingestion timestamp.
+
+#### 2. Job Descriptions (`job_descriptions`)
+*   `id` (Integer, Primary Key): Unique vacancy identifier.
+*   `title` (String, Non-Nullable): Target position title.
+*   `raw_text` (Text, Non-Nullable): Raw text requirements description.
+*   `parsed_requirements` (JSON, Nullable): Structured requirements mapping to `JobRequirements`.
+*   `created_at` (DateTime, Default: UTC Now): Creation timestamp.
+
+#### 3. Matches (`matches`)
+*   `id` (Integer, Primary Key): Unique match run identifier.
+*   `resume_id` (Integer, Foreign Key to `resumes.id`, ON DELETE CASCADE): Target resume.
+*   `job_id` (Integer, Foreign Key to `job_descriptions.id`, ON DELETE CASCADE): Target job.
+*   `overall_score` (Integer, Non-Nullable): Weighted matching score out of 100.
+*   `score_breakdown` (JSON, Non-Nullable): Dimension ratings (skills, experience, projects, education).
+*   `matching_requirements` (JSON Array, Non-Nullable): Requirements met by candidate.
+*   `missing_requirements` (JSON Object, Non-Nullable): Categorized required vs preferred missing requirements.
+*   `justification` (Text, Nullable): Granular AI justification statements separated by double line breaks.
+*   `created_at` (DateTime, Default: UTC Now): Evaluation timestamp.
+
+---
+
+## 6. API Reference
+
+API routing base URL defaults to: `http://localhost:8000`.
+
+### Endpoints Table:
+
+| Method | Path | Description | Request Body | Response Body |
+|---|---|---|---|---|
+| **POST** | `/jobs/` | Create a job posting | [JobDescriptionCreate](#jobdescriptioncreate) | [JobDescriptionOut](#jobdescriptionout) |
+| **GET** | `/jobs/` | Get all job descriptions | None | List of [JobDescriptionOut](#jobdescriptionout) |
+| **GET** | `/jobs/{job_id}` | Get specific job posting | None | [JobDescriptionOut](#jobdescriptionout) |
+| **POST** | `/resumes/upload` | Upload PDF and parse text | Multipart File | [ResumeOut](#resumeout) |
+| **GET** | `/resumes/` | Get all uploaded resumes | None | List of [ResumeOut](#resumeout) |
+| **GET** | `/resumes/{resume_id}` | Get structured candidate profile | None | [CandidateDetailResponse](#candidatedetailresponse) |
+| **POST** | `/matches/run` | Evaluate resume match | [MatchRunRequest](#matchrunrequest) | [MatchOut](#matchout) |
+| **GET** | `/matches/{match_id}` | Get specific match details | None | [MatchOut](#matchout) |
+| **POST** | `/screening/batch` | Run batch evaluations | [BatchScreeningRequest](#batchscreeningrequest) | [BatchScreeningResponse](#batchscreeningresponse) |
+| **GET** | `/screening/{job_id}/results` | Get ranked job matches | None | [BatchScreeningResponse](#batchscreeningresponse) |
+
+### JSON Payload Details:
+
+#### `JobDescriptionCreate`
+```json
+{
+  "title": "Backend AI/ML Engineer",
+  "raw_text": "We are looking for a Python dev with FastAPI experience and B.S. in CS."
+}
+```
+
+#### `JobDescriptionOut`
+```json
+{
+  "id": 1,
+  "title": "Backend AI/ML Engineer",
+  "raw_text": "We are looking for a Python dev...",
+  "parsed_requirements": {
+    "required_skills": ["Python", "FastAPI"],
+    "preferred_skills": ["Docker"],
+    "minimum_experience": "3 years",
+    "education_requirements": ["B.S. in Computer Science"],
+    "responsibilities": ["Build FastAPI backends"],
+    "keywords": ["fastapi", "python"]
+  },
+  "created_at": "2026-08-21T22:45:00"
+}
+```
+
+#### `ResumeOut`
+```json
+{
+  "id": 1,
+  "filename": "john_doe_resume.pdf",
+  "raw_text": "John Doe... Software Dev... Python, FastAPI...",
+  "structured_data": null,
+  "extraction_confidence": null,
+  "uploaded_at": "2026-08-21T22:45:00"
+}
+```
+
+#### `CandidateDetailResponse` *(supporting optional `?job_id=1` query parameter)*
+```json
+{
+  "resume_id": 1,
+  "filename": "john_doe_resume.pdf",
+  "uploaded_at": "2026-08-21T22:45:00",
+  "candidate_name": "John Doe",
+  "contact": {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+12345678",
+    "linkedin": "linkedin.com/in/johndoe",
+    "github": "github.com/johndoe"
+  },
+  "skills": ["Python", "FastAPI", "SQL"],
+  "experience": [
+    {
+      "role": "Software Developer",
+      "company": "Acme Corp",
+      "duration": "2 years",
+      "description": "Built backend APIs using FastAPI and Python."
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. in Computer Science",
+      "institution": "State University",
+      "year": "2022"
+    }
+  ],
+  "projects": [
+    {
+      "name": "E-Commerce Backend",
+      "technologies": ["Python", "PostgreSQL"],
+      "description": "Engineered transactional payment processing routes."
+    }
+  ],
+  "certifications": ["AWS Certified Developer"],
+  "job_id": 1,
+  "overall_score": 85,
+  "score_breakdown": {
+    "skills": 90,
+    "experience": 75,
+    "projects": 80,
+    "education": 95
+  },
+  "matching_requirements": [
+    "FastAPI & Python technical skill alignment",
+    "Candidate holds B.S. in Computer Science"
+  ],
+  "missing_requirements": {
+    "required": [],
+    "preferred": ["Docker"]
+  },
+  "justification": "Skills evaluation (Score: 90): Candidate has strong skills in Python...\n\nExperience evaluation (Score: 75)..."
+}
 ```
 
 ---
 
-## 🚀 Setup Instructions
+## 7. AI Pipeline & Prompt Quality
 
-### Prerequisites
-*   **Python:** version 3.11+
-*   **Node.js:** version 18+
-*   **PostgreSQL:** Active local instance or remote connection URI (e.g. Supabase)
+HireLens uses Gemini 2.5 Flash-Lite's structured JSON schema feature (Generate Content with JSON response schema validation) to prevent parsing errors and handle JSON object schemas without string parsing.
 
-### Backend Setup
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   # On Windows (PowerShell):
-   .\venv\Scripts\Activate.ps1
-   # On Linux/macOS:
-   source venv/bin/activate
-   ```
-3. Install Python requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Configure environment variables. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   Fill in the variables:
-   ```
-   DATABASE_URL=postgresql://your_db_user:your_db_password@localhost:5432/resume_screener
-   GEMINI_API_KEY=your_gemini_api_key_here
-   GEMINI_MODEL=gemini-2.5-flash-lite
-   ```
-5. Run the FastAPI development server (tables will auto-create on startup):
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-### Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd ../frontend
-   ```
-2. Install frontend packages:
-   ```bash
-   npm install
-   ```
-3. Set your environment parameters. (Optionally configure `VITE_API_BASE_URL` if FastAPI runs on a custom port; defaults to `http://localhost:8000`).
-4. Start the frontend server:
-   ```bash
-   npm run dev
-   ```
-5. Open your browser and navigate to `http://localhost:5173`.
-
----
-
-## 🔌 API Reference
-
-### Job Endpoints
-*   `POST /jobs/`: Create a job description.
-    *   **Request:** `{"title": "AI Engineer", "raw_text": "Required skills: Python, Git..."}`
-    *   **Response:** `{"id": 1, "title": "AI Engineer", "raw_text": "..."}`
-*   `GET /jobs`: Retrieve all job descriptions.
-*   `GET /jobs/{job_id}`: Retrieve a specific job description. Returns `404` if missing.
-
-### Resume Endpoints
-*   `POST /resumes/upload`: Upload PDF resume (multipart/form-data). Returns parsed text and database record metadata.
-*   `GET /resumes`: Retrieve list of all uploaded resumes.
-*   `GET /resumes/{resume_id}`: Retrieve structured candidate details. Accepts optional query parameter `?job_id=1` to append match metrics and evidence.
-
-### Matching & Screening Endpoints
-*   `POST /matches/run`: Evaluate a single resume against a job.
-    *   **Request:** `{"resume_id": 1, "job_id": 1}`
-    *   **Response:** Returns Match details.
-*   `GET /matches/{match_id}`: Retrieve specific evaluation record. Returns `404` if missing.
-*   `POST /screening/batch`: Evaluate multiple candidates against one job.
-    *   **Request:** `{"job_id": 1, "resume_ids": [1, 2, 3]}`
-*   `GET /screening/{job_id}/results`: Retrieve ranked matches for a job posting. Sorted by `overall_score DESC` and `resume_id ASC`.
-
----
-
-## 📝 LLM Prompts Used
-
-### 1. Resume Structured Extraction Prompt (`llm_extractor.py`)
 ```
-You are an expert resume parsing system. Analyze the raw resume text provided below and extract candidate profile details. CRITICAL RULES:
+[Raw PDF Text] ----> (Gemini Extractor + StructuredResume Schema) ----> [Structured Profile JSON]
+[Raw Job Text] ----> (Gemini Job Parser + JobRequirements Schema) ----> [Structured Requirements JSON]
+                                                                                |
+                                                                                v
+[Structured Match JSON] <---- (Gemini Matcher + LLMMatchResult Schema) <--------+
+```
+
+### Prompt 1: Resume Profile Ingestion (`llm_extractor.py`)
+This prompt parses unstructured text into standard candidate properties. It instructs the LLM not to assume or evaluate details.
+```
+You are an expert resume parsing system. Analyze the raw resume text provided below and extract candidate profile details. 
+CRITICAL RULES:
 1. Extract ONLY facts explicitly stated in the text. Do NOT make up, assume, or hallucinate details.
 2. If contact info, specific skills, experiences, projects, or certifications are not explicitly mentioned, leave them blank, empty strings, or empty lists as appropriate.
 3. Do not evaluate the candidate. Focus purely on accurate extraction and normalization.
 4. For candidate name, prioritize extraction from the header of the resume.
 ```
 
-### 2. Job Description Extraction Prompt (`llm_job_parser.py`)
+### Prompt 2: Job Description Parsing (`llm_job_parser.py`)
+This prompt separates job details into required and preferred skills based on description text phrasing.
 ```
 You are an expert job description parsing agent. Analyze the job description provided below and extract key structured requirements.
 CRITICAL RULES:
@@ -221,7 +416,8 @@ CRITICAL RULES:
 4. Return structured JSON matching the requested schema.
 ```
 
-### 3. Evidence-Linked Match Scoring Prompt (`llm_matcher.py`)
+### Prompt 3: Match Scorer & Evidence Compiler (`llm_matcher.py`)
+This prompt evaluates the candidate against parsed job descriptions. It forces the LLM to output sub-scores and cite explicit evidence for every category.
 ```
 You are an expert HR evaluation assistant. Compare the candidate's structured resume against the job requirements and compute factor scores from 0 to 100.
 
@@ -240,48 +436,243 @@ CRITICAL RULES:
 
 ---
 
-## 📊 Sample Output (JSON Match Format)
+## 8. Scoring Rubric & Weights
 
-Below is an example match evaluation response retrieved via `GET /matches/{match_id}`:
+To prevent model scoring bias, HireLens does not calculate the final weighted match score inside the LLM prompt. Instead, the LLM generates sub-scores for individual categories, and the overall match score is calculated deterministically in the Python application logic.
 
-```json
-{
-  "id": 1,
-  "resume_id": 2,
-  "job_id": 1,
-  "overall_score": 82,
-  "score_breakdown": {
-    "skills": 90,
-    "experience": 70,
-    "projects": 85,
-    "education": 80
-  },
-  "matching_requirements": [
-    "Candidate has experience with Python & FastAPI",
-    "Candidate holds a B.S. in Computer Science"
-  ],
-  "missing_requirements": {
-    "required": [
-      "No production-grade Docker experience listed in resume"
-    ],
-    "preferred": [
-      "No Kubernetes background"
-    ]
-  },
-  "justification": "Skills evaluation (Score: 90): Candidate has strong skills in Python and FastAPI as listed in resume header...\n\nExperience evaluation (Score: 70): Holds 2 years of relevant experience at Acme Corp...",
-  "created_at": "2026-08-21T22:45:00"
-}
+### Category Scoring Dimensions:
+1.  **Technical Skills (40% Weight):** Alignment between candidates' skills and job requirements.
+2.  **Work Experience (25% Weight):** Professional career duration and relevance.
+3.  **Project Relevance (20% Weight):** Technology matches and scope in candidate projects.
+4.  **Education History (15% Weight):** Relevance of degrees and certifications.
+
+### Scorer Formula (`llm_matcher.py`):
+```python
+weighted_sum = (
+    skills_score * 0.40 +
+    experience_score * 0.25 +
+    projects_score * 0.20 +
+    education_score * 0.15
+)
+overall_score = int(round(weighted_sum))
+```
+
+### Deterministic Missing Skills Classification (`matches.py`):
+Missing requirements returned by the LLM match run are cross-referenced with parsed required and preferred job skills using Python string matching.
+```python
+# Required missing requirements are separated from preferred missing requirements
+for req in missing_requirements:
+    if req.lower() in preferred_skills_set:
+        missing_classified["preferred"].append(req)
+    else:
+        missing_classified["required"].append(req)
 ```
 
 ---
 
-## ⚠️ Known Limitations & Future Improvements
-*   **Rate Limits:** Free-tier Gemini API calls can experience rate limits on rapid, repeated batch screening runs.
-*   **Single File Upload Limit:** Resumes must be uploaded one-by-one; batch upload capability is a planned extension.
-*   **Lacks Authentication:** Currently built without role-based access control, suitable for internal demo purposes.
-*   **Fidelity to Source:** Match evidence relies on Gemini's exact parsing capability, which can sometimes extract paraphrased snippets instead of literal quotes.
+## 9. Batch Screening & Deterministic Ranking
 
-### Planned Enhancements:
-1.  **Bulk Zip Ingestion:** Allow uploading zip folders of resumes.
-2.  **OAuth Integration:** Secure endpoints behind standard JWT authentication.
-3.  **Expanded Match Weights:** Allow recruiters to edit category weights dynamically in the UI.
+When screening a pool of candidate resumes against a single job posting:
+1.  **Post Ingestion:** Request is submitted with `job_id` and a list of `resume_ids` (`POST /screening/batch`).
+2.  **Sequential Matches Execution:** The system matches each candidate against the target job.
+3.  **Deterministic Sorting:** Candidates are sorted using two fields:
+    *   Primary: `overall_score` (Descending)
+    *   Secondary: `resume_id` (Ascending)
+4.  **Rank Assignment:** Candidates receive a rank index starting at `1` based on this sorted list. The secondary sort ensures that candidate rankings are stable and predictable.
+
+---
+
+## 10. Frontend Architecture & Pages
+
+The React frontend dashboard consumes the FastAPI backend, utilizing Tailwind CSS v4.
+
+### Page View Routing (`App.jsx`):
+*   **Dashboard:** Displays metrics for active vacancies, resume uploads, and screened candidate volumes.
+*   **Jobs Management:** List of job postings, details, and forms to create new job descriptions.
+*   **Job Details:** Displays vacancy descriptions alongside structured candidate requirements and screening action buttons.
+*   **Candidates Management:** Candidate list database with drag-and-drop file uploaders that accept resume PDF files.
+*   **Screen Candidates:** Selection dashboard mapping candidate resumes to job postings for batch screening runs.
+*   **Screening Results:** Grid showing overall scores, status badges, progress bars, and compare checkboxes.
+*   **Candidate Details:** Displays candidate details (contact information, work experience, projects) alongside matching requirements and AI evaluation justifications.
+*   **Compare Candidates:** Cross-comparison panel showing multiple candidates' metrics side-by-side and highlighting the stronger scores.
+
+---
+
+## 11. Project Structure & Source Code Layout
+
+The codebase separates routing, database models, Pydantic schemas, and processing logic.
+
+```
+hirelens/
+├── backend/
+│   ├── app/
+│   │   ├── main.py               # FastAPI server entry point and CORS setup
+│   │   ├── models.py             # SQLAlchemy schemas (resumes, job_descriptions, matches tables)
+│   │   ├── database.py           # PostgreSQL DB engine configurations and Session Local
+│   │   ├── config.py             # Settings configurations checking env variables
+│   │   ├── schemas.py            # Pydantic request validation and output response schemas
+│   │   ├── routers/
+│   │   │   ├── jobs.py           # Job Description routes (POST /, GET /, GET /{id})
+│   │   │   ├── resumes.py        # Resume Ingestion routes (POST /upload, GET /, GET /{id})
+│   │   │   ├── matches.py        # Matches evaluation route (POST /run, GET /{id})
+│   │   │   └── screening.py      # Batch screening results routes (POST /batch, GET /{job_id}/results)
+│   │   └── services/
+│   │       ├── pdf_parser.py     # PDF parsing using pdfplumber with error validations
+│   │       ├── llm_extractor.py  # Structured profile extraction using Pydantic validation
+│   │       ├── llm_job_parser.py # Job Description parser mapping to JobRequirements schema
+│   │       └── llm_matcher.py    # Dimension match evaluation using LLMMatchResult structure
+│   ├── requirements.txt          # Python packages list (fastapi, google-genai, psycopg2-binary, etc.)
+│   └── .env.example              # Placeholder template for database URIs and Gemini API keys
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Sidebar.jsx       # Layout navigation component
+│   │   │   ├── Loader.jsx        # Visual spinner and loading alert banner
+│   │   │   └── ErrorAlert.jsx    # Network connection error banner
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx     # Overview metrics page
+│   │   │   ├── Jobs.jsx          # Vacancy listing and create forms
+│   │   │   ├── JobDetails.jsx    # Job description text and structured requirements
+│   │   │   ├── Candidates.jsx    # Candidate list database and PDF upload drag-and-drop
+│   │   │   ├── ScreenCandidates.jsx # Selection checklist routing to batch evaluations
+│   │   │   ├── ScreeningResults.jsx # Ranked candidate list, progress bars, and compare checkboxes
+│   │   │   ├── CandidateDetails.jsx # Structured candidate profiles and justifications
+│   │   │   └── CompareCandidates.jsx# Side-by-side comparison tables
+│   │   ├── services/
+│   │   │   └── api.js            # Unified API caller mapping to backend URLs
+│   │   ├── App.jsx               # Navigation page router layout and configurations
+│   │   └── index.css             # Tailwind v4 entry imports
+│   ├── vite.config.js            # Vite configurations with tailwindcss compiler plugins
+│   └── package.json              # Frontend package configs, dependencies, and scripts
+└── README.md                     # Technical project documentation
+```
+
+---
+
+## 12. Setup Instructions
+
+### Prerequisites
+*   **Python:** version 3.11+
+*   **Node.js:** version 18+
+*   **PostgreSQL:** Active database instance (local or remote Supabase instance)
+
+### Backend Setup
+1.  Navigate to the `backend` directory:
+    ```bash
+    cd backend
+    ```
+2.  Create and activate a virtual environment:
+    ```bash
+    python -m venv venv
+    # On Windows:
+    .\venv\Scripts\Activate.ps1
+    # On macOS/Linux:
+    source venv/bin/activate
+    ```
+3.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+4.  Set up environment configurations:
+    ```bash
+    cp .env.example .env
+    ```
+    Configure parameters inside `.env`:
+    ```
+    DATABASE_URL=postgresql://your_db_user:your_db_password@localhost:5432/resume_screener
+    GEMINI_API_KEY=your_gemini_api_key_here
+    GEMINI_MODEL=gemini-2.5-flash-lite
+    ```
+5.  Start the FastAPI backend (tables will auto-create on startup):
+    ```bash
+    uvicorn app.main:app --reload
+    ```
+
+### Frontend Setup
+1.  Navigate to the `frontend` directory:
+    ```bash
+    cd ../frontend
+    ```
+2.  Install packages:
+    ```bash
+    npm install
+    ```
+3.  Start the local Vite development server:
+    ```bash
+    npm run dev
+    ```
+4.  Open the web browser at `http://localhost:5173`.
+
+---
+
+## 13. Recruiter Usage Workflow
+
+1.  **Post a Job Vacancy:** Go to **Jobs**, click **Create Job Description**, fill out the title and description, and submit.
+2.  **Upload Resumes:** Go to **Candidates**, click **Upload Resume (PDF)**, and upload candidate resumes.
+3.  **Start Screening:** Go to **Screening**, select the job vacancy, select candidate resumes, and click **Screen Candidates**.
+4.  **Review Ranked List:** The system screens the candidates and redirects to **Screening Results**. Inspect candidates ranked by match score.
+5.  **Examine Evidence:** Click **View Candidate** to inspect candidates' profiles, matching requirements, missing requirements, and text justifications.
+6.  **Cross-Compare Candidates:** On the results page, check 2-3 candidate checkboxes and click **Compare Selected Candidates** to review their metrics side-by-side.
+
+---
+
+## 14. Testing & Verification
+
+Verify the system endpoints using curl or API tools like Postman:
+
+### 1. Ingest Job Description
+```bash
+curl -X POST http://localhost:8000/jobs/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Senior Python Backend Developer", "raw_text": "Must have 5+ years experience in Python and SQL. Preferred skills include Docker."}'
+```
+
+### 2. Ingest Resume
+```bash
+curl -X POST http://localhost:8000/resumes/upload \
+  -F "file=@/path/to/resume.pdf"
+```
+
+### 3. Run Matching
+```bash
+curl -X POST http://localhost:8000/matches/run \
+  -H "Content-Type: application/json" \
+  -d '{"resume_id": 1, "job_id": 1}'
+```
+
+### 4. Query Batch Screening
+```bash
+curl -X POST http://localhost:8000/screening/batch \
+  -H "Content-Type: application/json" \
+  -d '{"job_id": 1, "resume_ids": [1, 2]}'
+```
+
+### 5. Fetch Ranked Job Results
+```bash
+curl http://localhost:8000/screening/1/results
+```
+
+---
+
+## 15. Responsible AI, Auditing & Human Oversight
+
+HireLens is designed around the principle of human-in-the-loop decision support.
+
+*   **No Automated Decisions:** The platform does not automate candidate rejection or progression. Instead, it processes documents to help recruiters evaluate applicants.
+*   **Audit Trail:** The matching details, sub-scores, and candidate evidence are saved in the `matches` table. This provides a clear audit trail that can be used to justify screening decisions.
+*   **Citing Source Documents:** Gemini is instructed to cite explicit evidence from candidate resumes. This allows recruiters to verify match scores against the original PDF content.
+*   **Reducing Bias:** By calculating the final score using a deterministic formula in Python, the system ensures that matching logic is applied consistently across all candidates.
+
+---
+
+## 16. Known Limitations & Future Improvements
+
+### Limitations
+*   **Rate Limits:** The Gemini 2.5 Flash-Lite API can experience rate limits on large batch screening requests.
+*   **Validation Errors:** If a candidate's resume PDF is corrupted or has unreadable text encoding, the PDF parsing service will reject the file instead of attempting to parse incomplete data.
+*   **No Authentication:** Currently designed as an internal tool without user roles, authentication, or workspace separation.
+
+### Planned Enhancements
+*   **OAuth2 Integration:** Add secure access control and recruiter login sessions.
+*   **Batch PDF Uploads:** Allow uploading zip folders of resumes to speed up ingestion.
+*   **Interactive Custom Weights:** Allow recruiters to edit scoring dimension weights dynamically in the UI.
