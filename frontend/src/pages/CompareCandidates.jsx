@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Loader from '../components/Loader';
 import ErrorAlert from '../components/ErrorAlert';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 
 export default function CompareCandidates({ resumeIds, jobId, setView }) {
   const [candidates, setCandidates] = useState([]);
@@ -44,7 +47,6 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
   if (loading) return <Loader message="Loading comparison metrics..." />;
   if (error) return <ErrorAlert message={error} onRetry={loadComparisonData} />;
 
-  // Find max value helper to highlight stronger scores
   const getMaxValue = (field, subField = null) => {
     const values = candidates.map(c => {
       if (subField) {
@@ -63,22 +65,18 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <button
-          onClick={() => setView('screeningResults')}
-          className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition flex items-center mb-1"
-        >
-          &larr; Back to screening results
-        </button>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Compare Candidates</h1>
-        <p className="text-slate-500 text-sm mt-1">Cross-compare scores and category fits side by side.</p>
-      </div>
+      <PageHeader 
+        title="Compare Candidates"
+        subtitle="Cross-compare scores and category fits side by side."
+        backLabel="Back to screening results"
+        backAction={() => setView('screeningResults')}
+      />
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-450 text-xs font-bold uppercase tracking-wider">
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-xs font-bold uppercase tracking-wider">
                 <th className="px-6 py-4 w-48">Metric</th>
                 {candidates.map((cand) => (
                   <th key={cand.resume_id} className="px-6 py-4 text-center min-w-64">
@@ -90,7 +88,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
               {/* Overall Score */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-bold text-slate-900">Overall Match Score</td>
                 {candidates.map((c) => {
                   const isMax = c.overall_score === maxOverall;
@@ -105,7 +103,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
               </tr>
 
               {/* Skills Score */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-500">Skills Alignment</td>
                 {candidates.map((c) => {
                   const score = c.score_breakdown?.skills || 0;
@@ -119,7 +117,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
               </tr>
 
               {/* Experience Score */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-500">Experience Alignment</td>
                 {candidates.map((c) => {
                   const score = c.score_breakdown?.experience || 0;
@@ -133,7 +131,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
               </tr>
 
               {/* Projects Score */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-500">Projects Relevance</td>
                 {candidates.map((c) => {
                   const score = c.score_breakdown?.projects || 0;
@@ -147,7 +145,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
               </tr>
 
               {/* Education Score */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-500">Education Alignment</td>
                 {candidates.map((c) => {
                   const score = c.score_breakdown?.education || 0;
@@ -161,16 +159,16 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
               </tr>
 
               {/* Matching requirements */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-500 align-top pt-4">Matching Skills</td>
                 {candidates.map((c) => (
                   <td key={c.resume_id} className="px-6 py-4 align-top">
                     {c.matching_requirements && c.matching_requirements.length > 0 ? (
                       <div className="flex flex-wrap gap-1 justify-center">
                         {c.matching_requirements.map((req, i) => (
-                          <span key={i} className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-100">
+                          <Badge key={i} variant="success">
                             {req}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     ) : (
@@ -181,7 +179,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
               </tr>
 
               {/* Missing Requirements */}
-              <tr className="hover:bg-slate-50/50 transition">
+              <tr className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-500 align-top pt-4">Missing Skills</td>
                 {candidates.map((c) => {
                   const missingObj = c.missing_requirements || {};
@@ -220,7 +218,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

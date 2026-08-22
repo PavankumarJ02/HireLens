@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Loader from '../components/Loader';
 import ErrorAlert from '../components/ErrorAlert';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 
 export default function ScreenCandidates({ setView, selectedJobId, setSelectedJobId }) {
   const [jobs, setJobs] = useState([]);
@@ -26,7 +29,6 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
       setJobs(jobsList);
       setResumes(resumesList);
 
-      // Default select the passed job description if present
       if (selectedJobId && jobsList.some(j => j.id === selectedJobId)) {
         // Leave it
       } else if (jobsList.length > 0) {
@@ -80,11 +82,10 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
 
     setScreening(true);
     setScreeningError('');
-    setScreeningMessage(`Analyzing and matching ${selectedResumes.length} candidates...`);
+    setScreeningMessage(`Evaluating ${selectedResumes.length} candidate profiles...`);
 
     try {
       await api.runBatchScreening(selectedJobId, selectedResumes);
-      // Navigate to results
       setView('screeningResults');
     } catch (err) {
       setScreeningError(err.message || 'Failed to complete screening session.');
@@ -97,19 +98,19 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
 
   if (screening) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-12 text-center max-w-xl mx-auto my-12 space-y-4 animate-pulse">
+      <Card className="max-w-xl mx-auto my-12 text-center p-12 space-y-4 animate-pulse">
         <Loader message={screeningMessage} />
-        <p className="text-xs text-slate-400 font-medium">This involves querying Google Gemini 2.5 Flash-Lite, which parses skills, experience, and educational fits. Please do not close this window.</p>
-      </div>
+        <p className="text-xs text-slate-400 font-medium">Analyzing qualifications, technical alignment, and experience match. Please wait...</p>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Run Screen Evaluation</h1>
-        <p className="text-slate-500 text-sm mt-1">Select a vacancy and select candidates to initiate batch evaluation.</p>
-      </div>
+      <PageHeader 
+        title="Run Screen Evaluation"
+        subtitle="Select a vacancy and choose candidates to initiate batch evaluation."
+      />
 
       {screeningError && (
         <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 text-xs font-semibold text-rose-700">
@@ -117,20 +118,20 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Side: Select Job description */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <Card className="space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">1. Select Job Posting</h3>
             
             {jobs.length === 0 ? (
-              <p className="text-xs text-slate-450 italic">No job postings created. Please create one first.</p>
+              <p className="text-xs text-slate-400 italic">No job postings created. Please create one first.</p>
             ) : (
               <div className="space-y-3">
                 {jobs.map((job) => (
                   <label
                     key={job.id}
-                    className={`flex items-start p-3.5 rounded-xl border cursor-pointer transition ${
+                    className={`flex items-start p-3.5 rounded-xl border cursor-pointer transition-all ${
                       selectedJobId === job.id
                         ? 'border-indigo-600 bg-indigo-50/40'
                         : 'border-slate-200 hover:bg-slate-50/50'
@@ -151,18 +152,18 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         {/* Right Side: Select Candidate resumes */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <Card className="space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-slate-900">2. Select Candidate Resumes</h3>
               {resumes.length > 0 && (
                 <button
                   onClick={handleSelectAllResumes}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition"
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
                   {selectedResumes.length === resumes.length ? 'Clear Selection' : 'Select All'}
                 </button>
@@ -170,7 +171,7 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
             </div>
 
             {resumes.length === 0 ? (
-              <p className="text-xs text-slate-450 italic">No candidate resumes available. Upload resumes first.</p>
+              <p className="text-xs text-slate-400 italic">No candidate resumes available. Upload resumes first.</p>
             ) : (
               <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-2">
                 {resumes.map((resume) => {
@@ -181,7 +182,7 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
                   return (
                     <label
                       key={resume.id}
-                      className={`flex items-center justify-between py-3.5 px-2 cursor-pointer transition first:pt-0 ${
+                      className={`flex items-center justify-between py-3.5 px-2 cursor-pointer transition-colors first:pt-0 ${
                         isChecked ? 'bg-slate-50/50 rounded-lg' : ''
                       }`}
                     >
@@ -194,7 +195,7 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
                         />
                         <div className="ml-4">
                           <span className="block text-sm font-semibold text-slate-900">{resume.filename}</span>
-                          <span className="block text-xs text-slate-450 mt-0.5">Parsed Candidate: {candidateName}</span>
+                          <span className="block text-xs text-slate-400 mt-0.5">Parsed Candidate: {candidateName}</span>
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-slate-400">ID: #{getResumeDisplayId(resume.id)}</span>
@@ -206,15 +207,15 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
 
             {/* Run Action */}
             <div className="pt-4 border-t border-slate-100 flex justify-end">
-              <button
+              <Button
+                variant="primary"
                 onClick={handleStartScreening}
                 disabled={screening || resumes.length === 0}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl text-sm shadow transition disabled:opacity-50"
               >
                 Screen Candidates ({selectedResumes.length} Selected)
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

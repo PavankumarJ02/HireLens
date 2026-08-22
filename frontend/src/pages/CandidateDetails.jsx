@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Loader from '../components/Loader';
 import ErrorAlert from '../components/ErrorAlert';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 
 export default function CandidateDetails({ resumeId, jobId, setView }) {
   const [candidate, setCandidate] = useState(null);
@@ -41,7 +45,6 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
   if (loading) return <Loader message="Loading candidate detailed profile..." />;
   if (error) return <ErrorAlert message={error} onRetry={loadCandidateDetails} />;
 
-  // Safely extract structured candidate data
   const name = candidate.candidate_name || candidate.filename;
   const contact = candidate.contact || {};
   const skills = candidate.skills || [];
@@ -50,10 +53,8 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
   const projects = candidate.projects || [];
   const certifications = candidate.certifications || [];
 
-  // Match details (if job_id was matched)
   const isMatched = candidate.overall_score !== null && candidate.overall_score !== undefined;
   
-  // Format justification text into clean subsections
   const renderJustification = () => {
     if (!candidate.justification) return null;
     const sections = candidate.justification.split('\n\n');
@@ -66,7 +67,7 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
           return (
             <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
               <h5 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-1.5">{title}</h5>
-              <p className="text-xs text-slate-655 leading-relaxed">{content.trim()}</p>
+              <p className="text-xs text-slate-600 leading-relaxed">{content.trim()}</p>
             </div>
           );
         })}
@@ -74,33 +75,25 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
     );
   };
 
-  // Safe missing skills extraction
   const missingObj = candidate.missing_requirements || {};
   const missingRequired = Array.isArray(missingObj) ? missingObj : (missingObj.required || []);
   const missingPreferred = Array.isArray(missingObj) ? [] : (missingObj.preferred || []);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header breadcrumb & actions */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <button
-            onClick={() => setView(jobId ? 'screeningResults' : 'candidates')}
-            className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition flex items-center mb-1"
-          >
-            &larr; Back to {jobId ? 'screening results' : 'candidates list'}
-          </button>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{name}</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Resume ID: #{getResumeDisplayId(candidate.resume_id)} &bull; Uploaded {new Date(candidate.uploaded_at).toLocaleDateString()}</p>
-        </div>
-      </div>
+      <PageHeader 
+        title={name}
+        subtitle={`Resume ID: #${getResumeDisplayId(candidate.resume_id)} • Uploaded ${new Date(candidate.uploaded_at).toLocaleDateString()}`}
+        backLabel={jobId ? 'Back to screening results' : 'Back to candidates list'}
+        backAction={() => setView(jobId ? 'screeningResults' : 'candidates')}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left Columns (Col Span 2): Profile details (experience, education, projects) */}
+        {/* Left Columns: Profile details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Experience */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <Card className="space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Professional Experience</h3>
             {experience.length === 0 ? (
               <p className="text-xs text-slate-400 italic">No experience records found.</p>
@@ -117,10 +110,10 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Projects */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <Card className="space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Projects</h3>
             {projects.length === 0 ? (
               <p className="text-xs text-slate-400 italic">No project records found.</p>
@@ -133,9 +126,9 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                     {proj.technologies && proj.technologies.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-2">
                         {proj.technologies.map((t, i) => (
-                          <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                          <Badge key={i} variant="neutral">
                             {t}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     )}
@@ -143,10 +136,10 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Education */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <Card className="space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Education</h3>
             {education.length === 0 ? (
               <p className="text-xs text-slate-400 italic">No education records found.</p>
@@ -163,14 +156,14 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
-        {/* Right Column (Col Span 1): Match evaluations details & Skills list */}
+        {/* Right Column: Match evaluations details & Skills list */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Match Score & breakdown */}
+          {/* Match Score */}
           {isMatched && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <Card className="space-y-4">
               <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Evaluation Match Summary</h3>
               
               <div className="flex items-baseline justify-between">
@@ -190,7 +183,7 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                   { name: 'Education', score: candidate.score_breakdown?.education || 0, color: 'bg-indigo-600' },
                 ].map((factor, i) => (
                   <div key={i} className="space-y-1">
-                    <div className="flex justify-between text-xs font-semibold text-slate-650">
+                    <div className="flex justify-between text-xs font-semibold text-slate-600">
                       <span>{factor.name}</span>
                       <span>{factor.score}/100</span>
                     </div>
@@ -200,30 +193,28 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Skills checklist */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <Card className="space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Skills & Certifications</h3>
             
-            {/* Candidate skills */}
             <div>
               <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Technical Skills</h4>
               {skills.length === 0 ? (
-                <p className="text-xs text-slate-450 italic">No skills listed.</p>
+                <p className="text-xs text-slate-400 italic">No skills listed.</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {skills.map((s, i) => (
-                    <span key={i} className="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded-md font-semibold">
+                    <Badge key={i} variant="primary">
                       {s}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Certifications */}
             {certifications.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Certifications</h4>
@@ -234,14 +225,13 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                 </ul>
               </div>
             )}
-          </div>
+          </Card>
 
-          {/* Missing & Matching requirements */}
+          {/* Requirement Fits */}
           {isMatched && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <Card className="space-y-4">
               <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Requirement Fits</h3>
               
-              {/* Matching */}
               <div>
                 <h4 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-2 flex items-center">
                   <svg className="h-4 w-4 mr-1 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -260,7 +250,6 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                 )}
               </div>
 
-              {/* Missing Required */}
               <div>
                 <h4 className="text-xs font-semibold text-rose-700 uppercase tracking-wider mb-2 flex items-center">
                   <svg className="h-4 w-4 mr-1 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -279,7 +268,6 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                 )}
               </div>
 
-              {/* Missing Preferred */}
               {missingPreferred.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2 flex items-center">
@@ -295,15 +283,15 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
                   </ul>
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           {/* Justification details */}
           {isMatched && candidate.justification && (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">AI Evaluation Justification</h3>
+            <Card className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">Evaluation Justification</h3>
               {renderJustification()}
-            </div>
+            </Card>
           )}
         </div>
 

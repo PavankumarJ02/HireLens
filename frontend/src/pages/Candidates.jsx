@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Loader from '../components/Loader';
 import ErrorAlert from '../components/ErrorAlert';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 
 export default function Candidates({ setView, setSelectedResumeId }) {
   const [resumes, setResumes] = useState([]);
@@ -50,7 +54,6 @@ export default function Candidates({ setView, setSelectedResumeId }) {
     try {
       await api.uploadResume(formData);
       setUploadSuccess(`Resume "${file.name}" uploaded and parsed successfully!`);
-      // Reload candidates
       await loadResumes();
     } catch (err) {
       setUploadError(err.message || 'Failed to upload and parse resume.');
@@ -76,31 +79,27 @@ export default function Candidates({ setView, setSelectedResumeId }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Candidates Profile List</h1>
-          <p className="text-slate-500 text-sm mt-1">Upload and manage candidate resumes for screening.</p>
-        </div>
-
-        {/* File Upload Button wrapper */}
-        <div className="self-start sm:self-auto">
-          <label className={`cursor-pointer inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl shadow transition ${
+      <PageHeader 
+        title="Candidates Profile List"
+        subtitle="Upload and manage candidate resumes for screening."
+        action={
+          <label className={`cursor-pointer inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition ${
             uploading ? 'opacity-50 pointer-events-none' : ''
           }`}>
-            <svg className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            {uploading ? 'Uploading PDF...' : 'Upload Resume (PDF)'}
+            {uploading ? 'Uploading PDF...' : 'Upload Resume (PDF/TXT)'}
             <input
               type="file"
-              accept=".pdf"
+              accept=".pdf,.txt"
               onChange={handleFileUpload}
               className="hidden"
               disabled={uploading}
             />
           </label>
-        </div>
-      </div>
+        }
+      />
 
       {/* Upload feedback alerts */}
       {uploadError && (
@@ -116,11 +115,11 @@ export default function Candidates({ setView, setSelectedResumeId }) {
 
       {/* Candidates List Table */}
       {resumes.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
+        <Card className="p-12 text-center">
           <p className="text-sm font-medium text-slate-400">No resumes available in database. Upload one to get started.</p>
-        </div>
+        </Card>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <Card className="p-0 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -140,37 +139,37 @@ export default function Candidates({ setView, setSelectedResumeId }) {
                   const isParsed = !!resume.structured_data;
 
                   return (
-                    <tr key={resume.id} className="hover:bg-slate-50/50 transition">
+                    <tr key={resume.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 text-sm font-bold text-slate-400">#{index + 1}</td>
                       <td className="px-6 py-4 text-sm font-semibold text-slate-900">{resume.filename}</td>
                       <td className="px-6 py-4 text-sm font-medium text-slate-600">{candidateName}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          isParsed ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
-                        }`}>
+                        <Badge variant={isParsed ? 'success' : 'warning'}>
                           {isParsed ? 'Parsed' : 'Raw Text'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-400 font-medium">
                         {new Date(resume.uploaded_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button
+                          <Button
+                            variant="danger"
+                            size="sm"
                             onClick={() => handleDeleteCandidate(resume.id)}
-                            className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 px-3 rounded-xl border border-rose-100 transition"
                           >
                             Delete
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={() => {
                               setSelectedResumeId(resume.id);
                               setView('candidateDetails');
                             }}
-                            className="bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl border border-slate-200 transition"
                           >
                             View Profile
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -179,7 +178,7 @@ export default function Candidates({ setView, setSelectedResumeId }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

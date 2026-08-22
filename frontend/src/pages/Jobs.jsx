@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import Loader from '../components/Loader';
 import ErrorAlert from '../components/ErrorAlert';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 
 export default function Jobs({ setView, setSelectedJobId }) {
   const [jobs, setJobs] = useState([]);
@@ -51,15 +55,12 @@ export default function Jobs({ setView, setSelectedJobId }) {
       });
       setFormSuccess('Job posting created successfully!');
       
-      // Reset form fields
       setTitle('');
       setRawText('');
       setShowCreateForm(false);
       
-      // Reload jobs
       await loadJobs();
 
-      // Navigate to detail page of the created job description
       if (created && created.id) {
         setSelectedJobId(created.id);
         setView('jobDetails');
@@ -88,30 +89,30 @@ export default function Jobs({ setView, setSelectedJobId }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Job Vacancies</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage, add, and review requirements for active roles.</p>
-        </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl shadow transition self-start sm:self-auto flex items-center"
-        >
-          <svg className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Create Job Description
-        </button>
-      </div>
+      <PageHeader 
+        title="Job Vacancies"
+        subtitle="Manage, add, and review requirements for active roles."
+        action={
+          <Button 
+            variant="primary" 
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Job Description
+          </Button>
+        }
+      />
 
-      {/* Creation Modal / Inline Drawer */}
+      {/* Creation Drawer */}
       {showCreateForm && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 max-w-3xl animate-slide-down">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-slate-900">New Job Description</h3>
+        <Card className="max-w-3xl border-indigo-100 shadow-md">
+          <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900">New Job Description</h3>
             <button 
               onClick={() => setShowCreateForm(false)}
-              className="text-slate-400 hover:text-slate-500 transition"
+              className="text-slate-400 hover:text-slate-600 transition text-xs font-semibold"
             >
               Cancel
             </button>
@@ -134,7 +135,7 @@ export default function Jobs({ setView, setSelectedJobId }) {
               <textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
-                rows={8}
+                rows={7}
                 placeholder="Paste the full job details, required skills, and preferred requirements here..."
                 className="w-full rounded-xl border border-slate-250 p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                 required
@@ -144,30 +145,32 @@ export default function Jobs({ setView, setSelectedJobId }) {
             {formError && <p className="text-rose-600 text-xs font-medium">{formError}</p>}
             {formSuccess && <p className="text-emerald-600 text-xs font-medium">{formSuccess}</p>}
 
-            <button
-              type="submit"
-              disabled={formSubmitting}
-              className="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition disabled:opacity-50"
-            >
-              {formSubmitting ? 'Creating Job...' : 'Create & Save'}
-            </button>
+            <div className="flex justify-end pt-2">
+              <Button
+                type="submit"
+                disabled={formSubmitting}
+                variant="primary"
+              >
+                {formSubmitting ? 'Creating Job...' : 'Create & Save'}
+              </Button>
+            </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {/* Jobs Listing grid */}
       {jobs.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
+        <Card className="p-12 text-center">
           <p className="text-sm font-medium text-slate-400">No job postings created yet.</p>
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobs.map((job, index) => (
-            <div key={job.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between hover:border-indigo-200 hover:shadow-md transition">
+            <Card key={job.id} hover className="flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <Badge variant="neutral">
                   ID: {index + 1}
-                </span>
+                </Badge>
                 <h3 className="text-base font-bold text-slate-900 mt-3">{job.title}</h3>
                 <p className="text-xs text-slate-400 mt-1">Created {new Date(job.created_at).toLocaleDateString()}</p>
                 
@@ -177,23 +180,25 @@ export default function Jobs({ setView, setSelectedJobId }) {
               </div>
 
               <div className="pt-6 mt-6 border-t border-slate-100 flex justify-end gap-2">
-                <button
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={() => handleDeleteJob(job.id)}
-                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 px-3.5 rounded-xl transition"
                 >
                   Delete
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setSelectedJobId(job.id);
                     setView('jobDetails');
                   }}
-                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 px-3.5 rounded-xl transition"
                 >
                   View Details
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

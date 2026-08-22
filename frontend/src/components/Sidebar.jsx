@@ -10,7 +10,7 @@ export default function Sidebar({ currentView, setView }) {
   ];
 
   return (
-    <div className="w-64 bg-slate-900 text-white min-h-screen flex flex-col border-r border-slate-800">
+    <aside className="w-64 bg-slate-900 text-white min-h-screen flex flex-col border-r border-slate-800 shrink-0">
       {/* Brand Header */}
       <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
         <div className="h-9 w-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20">
@@ -51,19 +51,6 @@ export default function Sidebar({ currentView, setView }) {
           );
         })}
       </nav>
-
-      {/* Recruiter Footnote */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="bg-slate-850 p-4 rounded-xl flex items-center space-x-3">
-          <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold text-sm">
-            HR
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-200">Recruiter Panel</p>
-            <p className="text-[10px] text-slate-500 font-medium">FastAPI + Gemini MVP</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </aside>
   );
 }
