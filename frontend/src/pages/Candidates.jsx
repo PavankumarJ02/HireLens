@@ -59,6 +59,18 @@ export default function Candidates({ setView, setSelectedResumeId }) {
     }
   };
 
+  const handleDeleteCandidate = async (resumeId) => {
+    if (!window.confirm('Are you sure you want to delete this candidate? This will also remove any screening matches associated with this candidate.')) {
+      return;
+    }
+    try {
+      await api.deleteResume(resumeId);
+      await loadResumes();
+    } catch (err) {
+      alert(err.message || 'Failed to delete candidate.');
+    }
+  };
+
   if (loading) return <Loader message="Loading candidates resume list..." />;
   if (error) return <ErrorAlert message={error} onRetry={loadResumes} />;
 
@@ -122,14 +134,14 @@ export default function Candidates({ setView, setSelectedResumeId }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {resumes.map((resume) => {
+                {resumes.map((resume, index) => {
                   const sd = resume.structured_data || {};
                   const candidateName = sd.contact?.name || 'Not Analyzed Yet';
                   const isParsed = !!resume.structured_data;
 
                   return (
                     <tr key={resume.id} className="hover:bg-slate-50/50 transition">
-                      <td className="px-6 py-4 text-sm font-bold text-slate-400">#{resume.id}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-400">#{index + 1}</td>
                       <td className="px-6 py-4 text-sm font-semibold text-slate-900">{resume.filename}</td>
                       <td className="px-6 py-4 text-sm font-medium text-slate-600">{candidateName}</td>
                       <td className="px-6 py-4">
@@ -143,15 +155,23 @@ export default function Candidates({ setView, setSelectedResumeId }) {
                         {new Date(resume.uploaded_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedResumeId(resume.id);
-                            setView('candidateDetails');
-                          }}
-                          className="bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl border border-slate-200 transition"
-                        >
-                          View Profile
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleDeleteCandidate(resume.id)}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 px-3 rounded-xl border border-rose-100 transition"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedResumeId(resume.id);
+                              setView('candidateDetails');
+                            }}
+                            className="bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl border border-slate-200 transition"
+                          >
+                            View Profile
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

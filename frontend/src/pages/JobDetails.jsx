@@ -7,12 +7,22 @@ export default function JobDetails({ jobId, setView, setSelectedJobId }) {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [jobs, setJobs] = useState([]);
+
+  const getJobDisplayId = (id) => {
+    const idx = jobs.findIndex(j => j.id === id);
+    return idx !== -1 ? idx + 1 : id;
+  };
 
   const loadJobDetails = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getJob(jobId);
+      const [jobsData, data] = await Promise.all([
+        api.getJobs(),
+        api.getJob(jobId)
+      ]);
+      setJobs(jobsData);
       setJob(data);
       setLoading(false);
     } catch (err) {
@@ -49,7 +59,7 @@ export default function JobDetails({ jobId, setView, setSelectedJobId }) {
             &larr; Back to jobs list
           </button>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{job.title}</h1>
-          <p className="text-slate-400 text-xs mt-0.5">ID: {job.id} &bull; Created {new Date(job.created_at).toLocaleDateString()}</p>
+          <p className="text-slate-400 text-xs mt-0.5">ID: {getJobDisplayId(job.id)} &bull; Created {new Date(job.created_at).toLocaleDateString()}</p>
         </div>
         <div className="flex items-center space-x-3 self-start sm:self-auto">
           <button

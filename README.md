@@ -282,11 +282,15 @@ API routing base URL defaults to: `http://localhost:8000`.
 | **POST** | `/jobs/` | Create a job posting | [JobDescriptionCreate](#jobdescriptioncreate) | [JobDescriptionOut](#jobdescriptionout) |
 | **GET** | `/jobs/` | Get all job descriptions | None | List of [JobDescriptionOut](#jobdescriptionout) |
 | **GET** | `/jobs/{job_id}` | Get specific job posting | None | [JobDescriptionOut](#jobdescriptionout) |
-| **POST** | `/resumes/upload` | Upload PDF and parse text | Multipart File | [ResumeOut](#resumeout) |
+| **DELETE** | `/jobs/{job_id}` | Delete specific job posting | None | None (204 No Content) |
+| **POST** | `/resumes/upload` | Upload PDF/TXT and parse | Multipart File | [ResumeOut](#resumeout) |
 | **GET** | `/resumes/` | Get all uploaded resumes | None | List of [ResumeOut](#resumeout) |
 | **GET** | `/resumes/{resume_id}` | Get structured candidate profile | None | [CandidateDetailResponse](#candidatedetailresponse) |
+| **DELETE** | `/resumes/{resume_id}` | Delete candidate resume | None | None (204 No Content) |
 | **POST** | `/matches/run` | Evaluate resume match | [MatchRunRequest](#matchrunrequest) | [MatchOut](#matchout) |
 | **GET** | `/matches/{match_id}` | Get specific match details | None | [MatchOut](#matchout) |
+| **DELETE** | `/matches/{match_id}` | Delete specific match evaluation | None | None (204 No Content) |
+| **DELETE** | `/matches/job/{job_id}` | Clear all matches for a job posting | None | None (204 No Content) |
 | **POST** | `/screening/batch` | Run batch evaluations | [BatchScreeningRequest](#batchscreeningrequest) | [BatchScreeningResponse](#batchscreeningresponse) |
 | **GET** | `/screening/{job_id}/results` | Get ranked job matches | None | [BatchScreeningResponse](#batchscreeningresponse) |
 

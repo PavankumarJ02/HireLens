@@ -9,6 +9,12 @@ export default function Dashboard({ setView, setSelectedJobId, setSelectedResume
   const [stats, setStats] = useState({ jobs: 0, resumes: 0, matches: 0, shortlisted: 0 });
   const [recentJobs, setRecentJobs] = useState([]);
   const [topCandidates, setTopCandidates] = useState([]);
+  const [allJobs, setAllJobs] = useState([]);
+
+  const getJobDisplayId = (id) => {
+    const idx = allJobs.findIndex(j => j.id === id);
+    return idx !== -1 ? idx + 1 : id;
+  };
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -27,6 +33,7 @@ export default function Dashboard({ setView, setSelectedJobId, setSelectedResume
       });
 
       // Show top 3 recent jobs
+      setAllJobs(jobs);
       setRecentJobs(jobs.slice(-3).reverse());
 
       // Try resolving candidates that have structured extractions
@@ -106,7 +113,7 @@ export default function Dashboard({ setView, setSelectedJobId, setSelectedResume
                   <div key={job.id} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
                     <div>
                       <h4 className="font-semibold text-slate-900 text-sm">{job.title}</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">ID: {job.id} &bull; Created {new Date(job.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">ID: {getJobDisplayId(job.id)} &bull; Created {new Date(job.created_at).toLocaleDateString()}</p>
                     </div>
                     <button
                       onClick={() => {

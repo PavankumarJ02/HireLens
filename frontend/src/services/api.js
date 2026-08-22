@@ -22,6 +22,9 @@ async function handleResponse(response) {
     }
     throw new Error(errorDetail);
   }
+  if (response.status === 204) {
+    return null;
+  }
   return response.json();
 }
 
@@ -102,6 +105,41 @@ export const api = {
 
   async getScreeningResults(jobId) {
     const response = await fetch(`${API_BASE_URL}/screening/${jobId}/results`);
+    return handleResponse(response);
+  },
+
+  async deleteJob(jobId) {
+    const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  async deleteResume(resumeId) {
+    const response = await fetch(`${API_BASE_URL}/resumes/${resumeId}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  async clearMatch(jobId, resumeId) {
+    const response = await fetch(`${API_BASE_URL}/matches/job/${jobId}/resume/${resumeId}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  async clearJobMatches(jobId) {
+    const response = await fetch(`${API_BASE_URL}/matches/job/${jobId}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  async deleteMatch(matchId) {
+    const response = await fetch(`${API_BASE_URL}/matches/${matchId}`, {
+      method: 'DELETE',
+    });
     return handleResponse(response);
   }
 };

@@ -7,14 +7,23 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resumes, setResumes] = useState([]);
+
+  const getResumeDisplayId = (resumeId) => {
+    const idx = resumes.findIndex(r => r.id === resumeId);
+    return idx !== -1 ? idx + 1 : resumeId;
+  };
 
   const loadComparisonData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const promises = resumeIds.map(rid => api.getResume(rid, jobId));
-      const data = await Promise.all(promises);
-      setCandidates(data);
+      const [resumesList, ...candidateData] = await Promise.all([
+        api.getResumes(),
+        ...resumeIds.map(rid => api.getResume(rid, jobId))
+      ]);
+      setResumes(resumesList);
+      setCandidates(candidateData);
       setLoading(false);
     } catch (err) {
       setError(err.message);
@@ -74,7 +83,7 @@ export default function CompareCandidates({ resumeIds, jobId, setView }) {
                 {candidates.map((cand) => (
                   <th key={cand.resume_id} className="px-6 py-4 text-center min-w-64">
                     <span className="block text-sm font-bold text-slate-900">{cand.candidate_name || cand.filename}</span>
-                    <span className="block text-[10px] text-slate-400 font-semibold mt-0.5">ID: #{cand.resume_id}</span>
+                    <span className="block text-[10px] text-slate-400 font-semibold mt-0.5">ID: #{getResumeDisplayId(cand.resume_id)}</span>
                   </th>
                 ))}
               </tr>

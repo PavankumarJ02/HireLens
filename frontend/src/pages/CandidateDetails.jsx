@@ -7,12 +7,22 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resumes, setResumes] = useState([]);
+
+  const getResumeDisplayId = (id) => {
+    const idx = resumes.findIndex(r => r.id === id);
+    return idx !== -1 ? idx + 1 : id;
+  };
 
   const loadCandidateDetails = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getResume(resumeId, jobId);
+      const [resumesData, data] = await Promise.all([
+        api.getResumes(),
+        api.getResume(resumeId, jobId)
+      ]);
+      setResumes(resumesData);
       setCandidate(data);
       setLoading(false);
     } catch (err) {
@@ -56,7 +66,7 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
           return (
             <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
               <h5 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-1.5">{title}</h5>
-              <p className="text-xs text-slate-655 leading-relaxed">{content.strip || content.trim()}</p>
+              <p className="text-xs text-slate-655 leading-relaxed">{content.trim()}</p>
             </div>
           );
         })}
@@ -81,7 +91,7 @@ export default function CandidateDetails({ resumeId, jobId, setView }) {
             &larr; Back to {jobId ? 'screening results' : 'candidates list'}
           </button>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{name}</h1>
-          <p className="text-slate-400 text-xs mt-0.5">Resume ID: #{candidate.resume_id} &bull; Uploaded {new Date(candidate.uploaded_at).toLocaleDateString()}</p>
+          <p className="text-slate-400 text-xs mt-0.5">Resume ID: #{getResumeDisplayId(candidate.resume_id)} &bull; Uploaded {new Date(candidate.uploaded_at).toLocaleDateString()}</p>
         </div>
       </div>
 

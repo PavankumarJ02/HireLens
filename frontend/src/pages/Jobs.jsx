@@ -35,7 +35,7 @@ export default function Jobs({ setView, setSelectedJobId }) {
 
   const handleCreateJob = async (e) => {
     e.preventDefault();
-    if (!title.strip || !title.trim() || !rawText.trim()) {
+    if (!title || !title.trim() || !rawText.trim()) {
       setFormError('Job Title and Description are required.');
       return;
     }
@@ -68,6 +68,18 @@ export default function Jobs({ setView, setSelectedJobId }) {
       setFormError(err.message || 'Failed to create job posting.');
     } finally {
       setFormSubmitting(false);
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job description? This will also remove any screening matches associated with this job.')) {
+      return;
+    }
+    try {
+      await api.deleteJob(jobId);
+      await loadJobs();
+    } catch (err) {
+      alert(err.message || 'Failed to delete job description.');
     }
   };
 
@@ -150,11 +162,11 @@ export default function Jobs({ setView, setSelectedJobId }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job) => (
+          {jobs.map((job, index) => (
             <div key={job.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between hover:border-indigo-200 hover:shadow-md transition">
               <div>
                 <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                  ID: {job.id}
+                  ID: {index + 1}
                 </span>
                 <h3 className="text-base font-bold text-slate-900 mt-3">{job.title}</h3>
                 <p className="text-xs text-slate-400 mt-1">Created {new Date(job.created_at).toLocaleDateString()}</p>
@@ -164,7 +176,13 @@ export default function Jobs({ setView, setSelectedJobId }) {
                 </p>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-slate-100 flex justify-end">
+              <div className="pt-6 mt-6 border-t border-slate-100 flex justify-end gap-2">
+                <button
+                  onClick={() => handleDeleteJob(job.id)}
+                  className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 px-3.5 rounded-xl transition"
+                >
+                  Delete
+                </button>
                 <button
                   onClick={() => {
                     setSelectedJobId(job.id);
