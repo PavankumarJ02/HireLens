@@ -1,5 +1,5 @@
 """
-Pydantic schemas for data validation and serialization (Day 2, Day 3 & Day 4).
+Pydantic schemas for data validation and serialization.
 """
 
 from datetime import datetime
@@ -132,7 +132,7 @@ class MatchOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# --- Day 3 Batch Screening & Day 4 Candidate Detail Schemas ---
+# --- Batch Screening & Candidate Detail Schemas ---
 
 class BatchScreeningRequest(BaseModel):
     job_id: int

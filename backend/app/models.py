@@ -1,5 +1,5 @@
 """
-SQLAlchemy models for HireLens (Day 2).
+SQLAlchemy models for HireLens database schema.
 Defines database schemas for Resumes, JobDescriptions, and Matches.
 """
 

@@ -1,5 +1,5 @@
 """
-Router for running candidate matching evaluations and retrieving match details (Day 2, Day 3 & Day 4).
+Router for running candidate matching evaluations and retrieving match details.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status

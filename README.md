@@ -1,10 +1,44 @@
-# HireLens [Smart Resume Screener]
+<div align="center">
 
-> **Explainable, Evidence-Based Resume Screening & Recruiter Decision-Support System**
+# 🎯 HireLens
 
-HireLens is an AI-assisted recruitment screening and decision-support platform designed to help recruiters evaluate candidate resumes against job descriptions with complete traceability. Instead of outputting a single, black-box match score, HireLens acts as a **recruiter decision-support copilot**. It extracts structured candidate profiles, performs rule-based checks, and uses LLM semantic reasoning to generate granular, evidence-linked alignment scores (citing specific resume snippets alongside job requirements) that HR teams can trace, audit, and trust.
+### Explainable, Evidence-Based Resume Screening & Recruiter Decision-Support System
 
-**Stack:** Backend (FastAPI + Gemini 2.5 Flash-Lite + SQLAlchemy + Pydantic), Frontend (React + Vite + Tailwind CSS).
+<p align="center">
+  <em>An AI-assisted recruitment platform providing granular, evidence-backed candidate alignment scores, side-by-side comparisons, and deterministic rank structures.</em>
+</p>
+
+<br />
+
+<!-- Hero Preview GIF -->
+<a href="./docs/demo-video.mp4">
+  <img src="./docs/demo-preview.gif" width="800" alt="HireLens Platform Demo Preview" />
+</a>
+
+<br /><br />
+
+<!-- Full Video Demo Link & Player -->
+<p align="center">
+  <a href="./docs/demo-video.mp4">
+    <img src="https://img.shields.io/badge/%E2%96%B6_Watch_Full_Demo_Video-Indigo?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Full Demo Video" />
+  </a>
+</p>
+
+<br />
+
+<!-- Tech Stack Badges -->
+<p align="center">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Python_3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Google_Gemini_2.5-8E75B2?style=for-the-badge&logo=google&logoColor=white" alt="Google Gemini" />
+</p>
+
+</div>
+
+<br />
 
 ---
 

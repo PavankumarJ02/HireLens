@@ -69,7 +69,7 @@ export const api = {
   async uploadResume(formData) {
     const response = await fetch(`${API_BASE_URL}/resumes/upload`, {
       method: 'POST',
-      body: formData, // Multipart form data
+      body: formData,
     });
     return handleResponse(response);
   },

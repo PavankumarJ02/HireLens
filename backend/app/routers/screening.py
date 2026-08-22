@@ -1,5 +1,5 @@
 """
-Router for handling batch screening operations and ranking queries (Day 3 & Day 4).
+Router for handling batch screening operations and ranking queries.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status

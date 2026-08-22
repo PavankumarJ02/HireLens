@@ -30,7 +30,7 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
       setResumes(resumesList);
 
       if (selectedJobId && jobsList.some(j => j.id === selectedJobId)) {
-        // Leave it
+        // Keep currently selected job
       } else if (jobsList.length > 0) {
         setSelectedJobId(jobsList[0].id);
       }

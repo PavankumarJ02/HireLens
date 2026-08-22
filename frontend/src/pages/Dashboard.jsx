@@ -28,6 +28,7 @@ export default function Dashboard({ setView, setSelectedJobId, setSelectedResume
         api.getResumes(),
       ]);
 
+      // Compute summary metric totals based on ingested candidates
       setStats({
         jobs: jobs.length,
         resumes: resumes.length,
