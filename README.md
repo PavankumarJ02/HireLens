@@ -10,24 +10,6 @@
 
 <br />
 
-<!-- Platform Video Demo & Animated Preview -->
-<a href="https://raw.githubusercontent.com/PavankumarJ02/HireLens/main/docs/demo_video.mp4">
-  <img src="./docs/demo-preview.gif" width="800" alt="HireLens Platform Demo - Click to Play Full Video" style="max-width: 100%; border-radius: 12px;" />
-</a>
-
-<br /><br />
-
-<!-- Native GitHub HTML Video Player -->
-<video src="https://raw.githubusercontent.com/PavankumarJ02/HireLens/main/docs/demo_video.mp4" controls="controls" width="100%" style="max-width: 800px; border-radius: 12px;"></video>
-
-<br /><br />
-
-<p align="center">
-  <a href="https://raw.githubusercontent.com/PavankumarJ02/HireLens/main/docs/demo_video.mp4">
-    <img src="https://img.shields.io/badge/%E2%96%B6_Play_Full_Demo_Video-Indigo?style=for-the-badge&logo=youtube&logoColor=white" alt="Play Full Demo Video" />
-  </a>
-</p>
-
 <!-- Tech Stack Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
@@ -42,6 +24,12 @@
   <img src="https://img.shields.io/badge/Google_Gemini_2.5-8E75B2?style=for-the-badge&logo=google&logoColor=white" alt="Google Gemini" />
   <img src="https://img.shields.io/badge/pdfplumber-FF6F61?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="pdfplumber" />
 </p>
+
+<br />
+
+## 📺 HireLens Platform Demo
+
+https://github.com/user-attachments/assets/PASTE-ACTUAL-VIDEO-ID-HERE
 
 </div>
 

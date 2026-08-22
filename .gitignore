@@ -46,6 +46,4 @@ Thumbs.db
 *.mov
 *.avi
 *.mkv
-!docs/demo_video.mp4
-!docs/demo-video.mp4
 
