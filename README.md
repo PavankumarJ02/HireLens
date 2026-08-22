@@ -10,10 +10,23 @@
 
 <br />
 
-<!-- Embedded Full Video Player -->
-<video src="docs/demo_video.mp4" controls width="800" style="max-width: 100%; border-radius: 12px;"></video>
+<!-- Platform Video Demo & Animated Preview -->
+<a href="https://raw.githubusercontent.com/PavankumarJ02/HireLens/main/docs/demo_video.mp4">
+  <img src="./docs/demo-preview.gif" width="800" alt="HireLens Platform Demo - Click to Play Full Video" style="max-width: 100%; border-radius: 12px;" />
+</a>
 
 <br /><br />
+
+<!-- Native GitHub HTML Video Player -->
+<video src="https://raw.githubusercontent.com/PavankumarJ02/HireLens/main/docs/demo_video.mp4" controls="controls" width="100%" style="max-width: 800px; border-radius: 12px;"></video>
+
+<br /><br />
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/PavankumarJ02/HireLens/main/docs/demo_video.mp4">
+    <img src="https://img.shields.io/badge/%E2%96%B6_Play_Full_Demo_Video-Indigo?style=for-the-badge&logo=youtube&logoColor=white" alt="Play Full Demo Video" />
+  </a>
+</p>
 
 <!-- Tech Stack Badges -->
 <p align="center">
@@ -659,4 +672,70 @@ hirelens/
 6.  **Cross-Compare Candidates:** On the results page, check 2-3 candidate checkboxes and click **Compare Selected Candidates** to review their metrics side-by-side.
 
 ---
+
+## 14. Testing & Verification
+
+Verify the system endpoints using curl or API tools like Postman:
+
+### 1. Ingest Job Description
+```bash
+curl -X POST http://localhost:8000/jobs/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Senior Python Backend Developer", "raw_text": "Must have 5+ years experience in Python and SQL. Preferred skills include Docker."}'
+```
+
+### 2. Ingest Resume
+```bash
+curl -X POST http://localhost:8000/resumes/upload \
+  -F "file=@/path/to/resume.pdf"
+```
+
+### 3. Run Matching
+```bash
+curl -X POST http://localhost:8000/matches/run \
+  -H "Content-Type: application/json" \
+  -d '{"resume_id": 1, "job_id": 1}'
+```
+
+### 4. Query Batch Screening
+```bash
+curl -X POST http://localhost:8000/screening/batch \
+  -H "Content-Type: application/json" \
+  -d '{"job_id": 1, "resume_ids": [1, 2]}'
+```
+
+### 5. Fetch Ranked Job Results
+```bash
+curl http://localhost:8000/screening/1/results
+```
+
+---
+
+## 15. Responsible AI, Auditing & Human Oversight
+
+HireLens is designed around the principle of human-in-the-loop decision support.
+
+*   **No Automated Decisions:** The platform does not automate candidate rejection or progression. Instead, it processes documents to help recruiters evaluate applicants.
+*   **Audit Trail:** The matching details, sub-scores, and candidate evidence are saved in the `matches` table. This provides a clear audit trail that can be used to justify screening decisions.
+*   **Citing Source Documents:** Gemini is instructed to cite explicit evidence from candidate resumes. This allows recruiters to verify match scores against the original PDF content.
+*   **Reducing Bias:** By calculating the final score using a deterministic formula in Python, the system ensures that matching logic is applied consistently across all candidates.
+
+---
+
+## 16. Known Limitations & Future Improvements
+
+### Security & Intake Features
+*   **Resume Intake Guard:** Strict file validation is applied. The system validates case-insensitive file extensions (`.pdf` and `.txt`). For PDFs, magic bytes signature `%PDF-` is verified. For TXT files, UTF-8 decodability and null character `\x00` absence are checked. Corrupted or text-less PDF documents (e.g. scanned/image-only PDFs) are rejected with clear client errors.
+*   **Extraction Confidence Heuristics:** Heuristics calculate confidence scores ("high", "medium", "low") for contact info, skills, education, and experience, saving them in the `Resume.extraction_confidence` database column. Inferred dates or missing fields trigger lower confidence alerts on the dashboard.
+
+### Limitations
+*   **Rate Limits:** The Gemini 2.5 Flash-Lite API can experience rate limits on large batch screening requests.
+*   **Validation Errors:** If a candidate's resume PDF is corrupted or has unreadable text encoding, the PDF parsing service will reject the file instead of attempting to parse incomplete data.
+*   **No Authentication:** Currently designed as an internal tool without user roles, authentication, or workspace separation.
+
+### Planned Enhancements
+*   **OAuth2 Integration:** Add secure access control and recruiter login sessions.
+*   **Batch PDF Uploads:** Allow uploading zip folders of resumes to speed up ingestion.
+*   **Interactive Custom Weights:** Allow recruiters to edit scoring dimension weights dynamically in the UI.
+
 
