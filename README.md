@@ -10,21 +10,10 @@
 
 <br />
 
-<!-- Hero Preview GIF -->
-<a href="./docs/demo-video.mp4">
-  <img src="./docs/demo-preview.gif" width="800" alt="HireLens Platform Demo Preview" />
-</a>
+<!-- Embedded Full Video Player -->
+<video src="./docs/demo-video.mp4" controls width="800" style="max-width: 100%; border-radius: 12px;"></video>
 
 <br /><br />
-
-<!-- Full Video Demo Link & Player -->
-<p align="center">
-  <a href="./docs/demo-video.mp4">
-    <img src="https://img.shields.io/badge/%E2%96%B6_Watch_Full_Demo_Video-Indigo?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Full Demo Video" />
-  </a>
-</p>
-
-<br />
 
 <!-- Tech Stack Badges -->
 <p align="center">
