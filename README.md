@@ -147,11 +147,93 @@ SCORING_WEIGHTS = {
     "education": 0.15
 }
 
+```python
+# Defined in backend/app/services/llm_matcher.py
+SCORING_WEIGHTS = {
+    "skills": 0.40,
+    "experience": 0.25,
+    "projects": 0.20,
+    "education": 0.15
+}
+
 overall_score = round(
     (skills_score * 0.40) +
     (experience_score * 0.25) +
     (projects_score * 0.20) +
     (education_score * 0.15)
+)
+```
+
+---
+
+## 💬 LLM Prompts & Prompt Engineering Architecture
+
+HireLens uses **Google Gemini 2.5 Flash-Lite** (`gemini-2.5-flash-lite`) integrated via the official `google-genai` SDK. Prompt engineering enforces strict type safety, zero-hallucination rules, and mandatory textual evidence citations.
+
+All prompts run with `temperature=0.1` and schema enforcement (`response_mime_type="application/json"` and `response_schema=...`) to ensure deterministic structure.
+
+---
+
+### 1. Candidate Resume Structured Profile Extraction Prompt
+**File**: [`backend/app/services/llm_extractor.py`](file:///D:/COMPANY_PROJECT/HireLens/backend/app/services/llm_extractor.py#L106-L127)  
+**Schema**: `StructuredResume` (Contact, Skills, Experience, Education, Projects, Certifications)
+
+```python
+prompt = (
+    "You are an expert resume parsing system. Analyze the raw resume text provided below "
+    "and extract candidate profile details.\n\n"
+    "CRITICAL RULES:\n"
+    "1. Extract ONLY facts explicitly stated in the text. Do NOT make up, assume, or hallucinate details.\n"
+    "2. If contact info, specific skills, experiences, projects, or certifications are not explicitly mentioned, "
+    "leave them blank, empty strings, or empty lists as appropriate.\n"
+    "3. Do not evaluate the candidate. Focus purely on accurate extraction and normalization.\n"
+    "4. For candidate name, prioritize extraction from the header of the resume.\n\n"
+    f"Resume text:\n{resume_text}"
+)
+```
+
+---
+
+### 2. Job Description Structured Requirements Parsing Prompt
+**File**: [`backend/app/services/llm_job_parser.py`](file:///D:/COMPANY_PROJECT/HireLens/backend/app/services/llm_job_parser.py#L27-L47)  
+**Schema**: `JobRequirements` (Required Skills, Preferred Skills, Minimum Experience, Education, Responsibilities)
+
+```python
+prompt = (
+    "You are an expert job description parsing agent. Analyze the job description provided "
+    "below and extract key structured requirements.\n"
+    "CRITICAL RULES:\n"
+    "1. Separate required_skills (must-haves) from preferred_skills (optional/nice-to-haves) strictly "
+    "based on phrasing in the description. Do NOT hallucinate dependencies.\n"
+    "2. Do not invent requirements that are not mentioned.\n"
+    "3. Preserve exact technical terminology (e.g., framework versions, tool names).\n"
+    "4. Return structured JSON matching the requested schema.\n\n"
+    f"Job description text:\n{job_description_text}"
+)
+```
+
+---
+
+### 3. Evidence-Linked Candidate Evaluation & Scoring Prompt
+**File**: [`backend/app/services/llm_matcher.py`](file:///D:/COMPANY_PROJECT/HireLens/backend/app/services/llm_matcher.py#L53-L79)  
+**Schema**: `LLMMatchResult` (Skills 0–100, Experience 0–100, Projects 0–100, Education 0–100, Evidential Quotes, Missing Requirements)
+
+```python
+prompt = (
+    "You are an expert HR evaluation assistant. Compare the candidate's structured resume "
+    "against the job requirements and compute factor scores from 0 to 100.\n\n"
+    "Evaluation Dimensions:\n"
+    "1. Skills: Match technical/soft skills. Highlight required vs preferred overlap.\n"
+    "2. Experience: Relevance and tenure of past experiences.\n"
+    "3. Projects: Check if project scope and technology stack align with the job responsibilities.\n"
+    "4. Education: Check degree requirements alignment.\n\n"
+    "CRITICAL RULES:\n"
+    "1. Do NOT calculate the final weighted overall score. You must only evaluate the individual dimensions.\n"
+    "2. CITE concrete evidence from the resume text or experience description for every dimension's score.\n"
+    "3. Do not assume or invent facts. If the resume is missing any requirement, explicitly list it under missing_requirements.\n"
+    "4. Return structured JSON conforming to the requested schema.\n\n"
+    f"Candidate Structured Resume:\n{json.dumps(structured_resume, indent=2)}\n\n"
+    f"Job Description Requirements:\n{json.dumps(parsed_job_requirements, indent=2)}"
 )
 ```
 
