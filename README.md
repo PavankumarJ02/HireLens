@@ -29,7 +29,7 @@
 
 ## 📺 HireLens Platform Demo
 
-https://github.com/user-attachments/assets/PASTE-ACTUAL-VIDEO-ID-HERE
+https://github.com/user-attachments/assets/6ee92771-535d-426a-95f6-91df3fc174fc
 
 </div>
 
