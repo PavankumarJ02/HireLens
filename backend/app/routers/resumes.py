@@ -10,6 +10,7 @@ from app.models import Resume, Match
 from app.schemas import ResumeOut, CandidateDetailResponse
 from app.services.pdf_parser import extract_text_from_pdf, PDFParsingError
 from app.services.resume_security import validate_file, ResumeValidationError
+from app.services.llm_extractor import extract_structured_data
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
@@ -43,12 +44,21 @@ async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_
             detail=f"An unexpected error occurred during extraction: {str(e)}"
         )
 
+    # Extract structured candidate data using Gemini
+    try:
+        structured_resume, confidence_dict = extract_structured_data(raw_text)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI candidate parsing failed during upload: {str(e)}"
+        )
+
     # Save to PostgreSQL
     db_resume = Resume(
         filename=file.filename,
         raw_text=raw_text,
-        structured_data=None,
-        extraction_confidence=None
+        structured_data=structured_resume,
+        extraction_confidence=confidence_dict
     )
     db.add(db_resume)
     db.commit()
@@ -78,6 +88,21 @@ async def get_resume(resume_id: int, job_id: Optional[int] = None, db: Session =
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Resume with ID {resume_id} not found."
         )
+
+    # Trigger extraction on the fly if it is missing (e.g. for previously uploaded raw resumes)
+    if not resume.structured_data:
+        try:
+            structured_resume, confidence_dict = extract_structured_data(resume.raw_text)
+            resume.structured_data = structured_resume
+            resume.extraction_confidence = confidence_dict
+            db.add(resume)
+            db.commit()
+            db.refresh(resume)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"AI candidate parsing failed on the fly: {str(e)}"
+            )
 
     # Map candidate fields from structured_data JSON if populated
     candidate_name = resume.filename
@@ -137,3 +162,19 @@ async def get_resume(resume_id: int, job_id: Optional[int] = None, db: Session =
         missing_requirements=match_missing_requirements,
         justification=match_justification
     )
+
+
+@router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_resume(resume_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a specific candidate's resume. Cascades cleanup of related matches.
+    """
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Resume with ID {resume_id} not found."
+        )
+    db.delete(resume)
+    db.commit()
+    return None

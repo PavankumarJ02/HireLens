@@ -205,3 +205,50 @@ async def get_match(match_id: int, db: Session = Depends(get_db)):
             detail=f"Match record with ID {match_id} not found."
         )
     return match_record
+
+
+@router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_match_by_id(match_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a specific match evaluation by match ID.
+    """
+    match_record = db.query(Match).filter(Match.id == match_id).first()
+    if not match_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Match record with ID {match_id} not found."
+        )
+    db.delete(match_record)
+    db.commit()
+    return None
+
+
+@router.delete("/job/{job_id}/resume/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_match(job_id: int, resume_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a specific candidate match evaluation.
+    """
+    match_record = db.query(Match).filter(
+        Match.job_id == job_id,
+        Match.resume_id == resume_id
+    ).first()
+    if not match_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Match record for job {job_id} and resume {resume_id} not found."
+        )
+    db.delete(match_record)
+    db.commit()
+    return None
+
+
+@router.delete("/job/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_job_matches(job_id: int, db: Session = Depends(get_db)):
+    """
+    Clear all candidate match evaluations for a specific job.
+    """
+    matches = db.query(Match).filter(Match.job_id == job_id).all()
+    for m in matches:
+        db.delete(m)
+    db.commit()
+    return None

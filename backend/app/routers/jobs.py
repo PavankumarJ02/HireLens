@@ -52,3 +52,19 @@ async def get_job(job_id: int, db: Session = Depends(get_db)):
             detail=f"Job description with ID {job_id} not found."
         )
     return job
+
+
+@router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_job(job_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a specific job description. Cascades cleanup of related matches.
+    """
+    job = db.query(JobDescription).filter(JobDescription.id == job_id).first()
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job description with ID {job_id} not found."
+        )
+    db.delete(job)
+    db.commit()
+    return None

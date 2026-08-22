@@ -44,6 +44,16 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
     loadData();
   }, []);
 
+  const getJobDisplayId = (id) => {
+    const idx = jobs.findIndex(j => j.id === id);
+    return idx !== -1 ? idx + 1 : id;
+  };
+
+  const getResumeDisplayId = (id) => {
+    const idx = resumes.findIndex(r => r.id === id);
+    return idx !== -1 ? idx + 1 : id;
+  };
+
   const handleToggleResume = (id) => {
     setSelectedResumes(prev => 
       prev.includes(id) ? prev.filter(rid => rid !== id) : [...prev, id]
@@ -135,7 +145,7 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
                     />
                     <div className="ml-3">
                       <span className="block text-sm font-bold text-slate-900">{job.title}</span>
-                      <span className="block text-[10px] font-semibold text-slate-400 mt-0.5">ID: {job.id}</span>
+                      <span className="block text-[10px] font-semibold text-slate-400 mt-0.5">ID: {getJobDisplayId(job.id)}</span>
                     </div>
                   </label>
                 ))}
@@ -187,7 +197,7 @@ export default function ScreenCandidates({ setView, selectedJobId, setSelectedJo
                           <span className="block text-xs text-slate-450 mt-0.5">Parsed Candidate: {candidateName}</span>
                         </div>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400">ID: #{resume.id}</span>
+                      <span className="text-[10px] font-bold text-slate-400">ID: #{getResumeDisplayId(resume.id)}</span>
                     </label>
                   );
                 })}

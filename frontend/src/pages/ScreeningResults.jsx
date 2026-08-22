@@ -16,17 +16,26 @@ export default function ScreeningResults({
   const [loadingResults, setLoadingResults] = useState(false);
   const [error, setError] = useState(null);
   
-  // Compare selection list
   const [selectedToCompare, setSelectedToCompare] = useState([]);
+  const [resumes, setResumes] = useState([]);
+
+  const getResumeDisplayId = (resumeId) => {
+    const idx = resumes.findIndex(r => r.id === resumeId);
+    return idx !== -1 ? idx + 1 : resumeId;
+  };
 
   // Load all jobs for selection dropdown
   const loadJobsList = async () => {
     setLoadingJobs(true);
     try {
-      const data = await api.getJobs();
-      setJobs(data);
-      if (data.length > 0 && !selectedJobId) {
-        setSelectedJobId(data[0].id);
+      const [jobsData, resumesData] = await Promise.all([
+        api.getJobs(),
+        api.getResumes()
+      ]);
+      setJobs(jobsData);
+      setResumes(resumesData);
+      if (jobsData.length > 0 && !selectedJobId) {
+        setSelectedJobId(jobsData[0].id);
       }
       setLoadingJobs(false);
     } catch (err) {
@@ -81,6 +90,30 @@ export default function ScreeningResults({
     setView('compare');
   };
 
+  const handleClearMatch = async (resumeId) => {
+    if (!window.confirm('Are you sure you want to clear this match evaluation?')) {
+      return;
+    }
+    try {
+      await api.clearMatch(selectedJobId, resumeId);
+      await loadScreeningData();
+    } catch (err) {
+      alert(err.message || 'Failed to clear match evaluation.');
+    }
+  };
+
+  const handleClearAllMatches = async () => {
+    if (!window.confirm('Are you sure you want to clear ALL match evaluations for this job role?')) {
+      return;
+    }
+    try {
+      await api.clearJobMatches(selectedJobId);
+      await loadScreeningData();
+    } catch (err) {
+      alert(err.message || 'Failed to clear all match evaluations.');
+    }
+  };
+
   if (loadingJobs) return <Loader message="Loading active vacancies list..." />;
 
   return (
@@ -131,13 +164,21 @@ export default function ScreeningResults({
             <span className="text-xs font-semibold text-slate-500">
               {selectedToCompare.length} of {results.length} selected for comparison
             </span>
-            <button
-              onClick={triggerCompare}
-              disabled={selectedToCompare.length < 2}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-xl transition disabled:opacity-40"
-            >
-              Compare Selected Candidates
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleClearAllMatches}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 px-4 rounded-xl border border-rose-100 transition"
+              >
+                Clear All Matches
+              </button>
+              <button
+                onClick={triggerCompare}
+                disabled={selectedToCompare.length < 2}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-xl transition disabled:opacity-40"
+              >
+                Compare Selected Candidates
+              </button>
+            </div>
           </div>
 
           {/* Results table */}
@@ -179,7 +220,7 @@ export default function ScreeningResults({
                         <td className="px-6 py-4">
                           <div>
                             <span className="block text-sm font-semibold text-slate-900">{cand.candidate_name}</span>
-                            <span className="block text-[10px] text-slate-400 font-semibold mt-0.5">Resume ID: {cand.resume_id}</span>
+                            <span className="block text-[10px] text-slate-400 font-semibold mt-0.5">Resume ID: {getResumeDisplayId(cand.resume_id)}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center font-bold text-slate-900 text-base">
@@ -207,15 +248,23 @@ export default function ScreeningResults({
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedResumeId(cand.resume_id);
-                              setView('candidateDetails');
-                            }}
-                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 px-3 rounded-xl border border-indigo-100 transition"
-                          >
-                            View Candidate
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleClearMatch(cand.resume_id)}
+                              className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold py-2 px-3 rounded-xl border border-rose-100 transition"
+                            >
+                              Clear Match
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedResumeId(cand.resume_id);
+                                setView('candidateDetails');
+                              }}
+                              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 px-3 rounded-xl border border-indigo-100 transition"
+                            >
+                              View Candidate
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
