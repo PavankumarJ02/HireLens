@@ -624,19 +624,3 @@ hirelens/
 
 ---
 
-
-## 14. Known Limitations & Future Improvements
-
-### Security & Intake Features
-*   **Resume Intake Guard:** Strict file validation is applied. The system validates case-insensitive file extensions (`.pdf` and `.txt`). For PDFs, magic bytes signature `%PDF-` is verified. For TXT files, UTF-8 decodability and null character `\x00` absence are checked. Corrupted or text-less PDF documents (e.g. scanned/image-only PDFs) are rejected with clear client errors.
-*   **Extraction Confidence Heuristics:** Heuristics calculate confidence scores ("high", "medium", "low") for contact info, skills, education, and experience, saving them in the `Resume.extraction_confidence` database column. Inferred dates or missing fields trigger lower confidence alerts on the dashboard.
-
-### Limitations
-*   **Rate Limits:** The Gemini 2.5 Flash-Lite API can experience rate limits on large batch screening requests.
-*   **Validation Errors:** If a candidate's resume PDF is corrupted or has unreadable text encoding, the PDF parsing service will reject the file instead of attempting to parse incomplete data.
-*   **No Authentication:** Currently designed as an internal tool without user roles, authentication, or workspace separation.
-
-### Planned Enhancements
-*   **OAuth2 Integration:** Add secure access control and recruiter login sessions.
-*   **Batch PDF Uploads:** Allow uploading zip folders of resumes to speed up ingestion.
-*   **Interactive Custom Weights:** Allow recruiters to edit scoring dimension weights dynamically in the UI.
