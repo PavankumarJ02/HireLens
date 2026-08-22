@@ -371,6 +371,18 @@ Frontend application launches at `http://localhost:5173`.
 
 ---
 
-## 📄 License
+<div align="center">
 
-Distributed under the [MIT License](LICENSE).
+### 👨‍💻 Designed & Engineered by **Pavan Kumar J**
+
+*Crafted as an explainable, evidence-backed AI recruiter decision-support platform for transparent talent acquisition.*
+
+<br />
+
+<p align="center">
+  <a href="https://github.com/PavankumarJ02">
+    <img src="https://img.shields.io/badge/GitHub-PavankumarJ02-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Profile" />
+  </a>
+</p>
+
+</div>
