@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ HireLens
+# ⚡ HireLens [Smart-Resume-Screener]
 
 ### *Explainable, Evidence-Based Candidate Screening & Decision-Support Copilot*
 
