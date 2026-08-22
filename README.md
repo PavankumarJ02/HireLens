@@ -624,56 +624,8 @@ hirelens/
 
 ---
 
-## 14. Testing & Verification
 
-Verify the system endpoints using curl or API tools like Postman:
-
-### 1. Ingest Job Description
-```bash
-curl -X POST http://localhost:8000/jobs/ \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Senior Python Backend Developer", "raw_text": "Must have 5+ years experience in Python and SQL. Preferred skills include Docker."}'
-```
-
-### 2. Ingest Resume
-```bash
-curl -X POST http://localhost:8000/resumes/upload \
-  -F "file=@/path/to/resume.pdf"
-```
-
-### 3. Run Matching
-```bash
-curl -X POST http://localhost:8000/matches/run \
-  -H "Content-Type: application/json" \
-  -d '{"resume_id": 1, "job_id": 1}'
-```
-
-### 4. Query Batch Screening
-```bash
-curl -X POST http://localhost:8000/screening/batch \
-  -H "Content-Type: application/json" \
-  -d '{"job_id": 1, "resume_ids": [1, 2]}'
-```
-
-### 5. Fetch Ranked Job Results
-```bash
-curl http://localhost:8000/screening/1/results
-```
-
----
-
-## 15. Responsible AI, Auditing & Human Oversight
-
-HireLens is designed around the principle of human-in-the-loop decision support.
-
-*   **No Automated Decisions:** The platform does not automate candidate rejection or progression. Instead, it processes documents to help recruiters evaluate applicants.
-*   **Audit Trail:** The matching details, sub-scores, and candidate evidence are saved in the `matches` table. This provides a clear audit trail that can be used to justify screening decisions.
-*   **Citing Source Documents:** Gemini is instructed to cite explicit evidence from candidate resumes. This allows recruiters to verify match scores against the original PDF content.
-*   **Reducing Bias:** By calculating the final score using a deterministic formula in Python, the system ensures that matching logic is applied consistently across all candidates.
-
----
-
-## 16. Known Limitations & Future Improvements
+## 14. Known Limitations & Future Improvements
 
 ### Security & Intake Features
 *   **Resume Intake Guard:** Strict file validation is applied. The system validates case-insensitive file extensions (`.pdf` and `.txt`). For PDFs, magic bytes signature `%PDF-` is verified. For TXT files, UTF-8 decodability and null character `\x00` absence are checked. Corrupted or text-less PDF documents (e.g. scanned/image-only PDFs) are rejected with clear client errors.
