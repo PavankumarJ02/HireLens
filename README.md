@@ -11,18 +11,23 @@
 <br />
 
 <!-- Embedded Full Video Player -->
-<video src="./docs/demo-video.mp4" controls width="800" style="max-width: 100%; border-radius: 12px;"></video>
+<video src="docs/demo_video.mp4" controls width="800" style="max-width: 100%; border-radius: 12px;"></video>
 
 <br /><br />
 
 <!-- Tech Stack Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Python_3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/React_18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <br />
   <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/SQLAlchemy_v2-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
+  <img src="https://img.shields.io/badge/Pydantic_v2-E92063?style=for-the-badge&logo=pydantic&logoColor=white" alt="Pydantic" />
   <img src="https://img.shields.io/badge/Google_Gemini_2.5-8E75B2?style=for-the-badge&logo=google&logoColor=white" alt="Google Gemini" />
+  <img src="https://img.shields.io/badge/pdfplumber-FF6F61?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="pdfplumber" />
 </p>
 
 </div>
@@ -203,17 +208,21 @@ graph TD
 
 ## 4. Technology Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend Framework** | React (Vite) | Single-page application rendering recruiter screens |
-| **Styling** | Tailwind CSS v4 | SaaS layout stylesheets, progress bars, and badges |
-| **Backend Framework** | FastAPI (Python 3.11+) | Asynchronous routing, middleware processing, and validation |
-| **Database** | PostgreSQL | Relational storage for resumes, jobs, and evaluations |
-| **ORM** | SQLAlchemy | Object-relational mapper for database transactions |
-| **Object Validation** | Pydantic v2 | Model validation for API inputs, outputs, and JSON payloads |
-| **LLM Engine** | Gemini 2.5 Flash-Lite | Contextual structured extraction and matches generation |
-| **SDK** | `google-genai` | Native Google API integration for Structured Output schemas |
-| **PDF Parsing** | pdfplumber | Raw text extraction from resume PDF documents |
+| Layer | Technology | Version | Purpose in HireLens |
+|---|---|---|---|
+| **Backend API** | FastAPI | `^0.115.0` | Asynchronous RESTful API routing, dependency injection, CORS handling |
+| **Language & Runtime** | Python | `3.9+` | Primary application language for backend services and AI pipelines |
+| **AI / LLM Model** | Google Gemini 2.5 Flash-Lite | `gemini-2.5-flash-lite` | Structured profile extraction, job parsing, and evidence-linked candidate evaluation |
+| **AI SDK** | `google-genai` | `^0.1.1` | Native Google GenAI SDK with structured Pydantic JSON schema generation |
+| **Database** | PostgreSQL | `^14.0+` | Relational persistence for candidate resumes, job descriptions, and screening matches |
+| **ORM** | SQLAlchemy | `^2.0.0` | Declarative database modeling, query building, and cascading relationship management |
+| **Data Validation** | Pydantic v2 | `^2.0.0` | Strict data validation, schema enforcement, and JSON serialization |
+| **PDF Parsing** | pdfplumber | `^0.11.0` | Raw text extraction from PDF resumes with whitespace & layout normalization |
+| **Frontend Framework** | React | `^18.3.0` | Single-page application rendering dashboard, candidate views, and side-by-side comparison |
+| **Build Tooling** | Vite | `^8.2.0` | Ultra-fast frontend bundler and local dev server |
+| **UI Styling** | Tailwind CSS v4 | `^4.0.0` | Utility-first styling engine for SaaS recruiter layout, cards, buttons, and status badges |
+| **HTTP Client** | Native Fetch API | ES6+ | Asynchronous REST API integration between React and FastAPI endpoints |
+| **Environment Config** | python-dotenv | `^1.0.0` | Secure environment configuration management (`GEMINI_API_KEY`, `DATABASE_URL`) |
 
 ---
 
