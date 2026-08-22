@@ -1,4 +1,4 @@
-# HireLens
+# HireLens [Smart Resume Screener]
 
 > **Explainable, Evidence-Based Resume Screening & Recruiter Decision-Support System**
 
