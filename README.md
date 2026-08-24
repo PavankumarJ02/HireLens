@@ -36,7 +36,7 @@ Rather than delegating hiring decisions to a black-box AI model, HireLens functi
 
 ## 🎬 Platform Demonstration
 
-https://github.com/user-attachments/assets/6ee92771-535d-426a-95f6-91df3fc174fc
+https://github.com/user-attachments/assets/fbc6392b-12d9-4b7c-a70c-1783c1e0c8ea
 
 </div>
 
